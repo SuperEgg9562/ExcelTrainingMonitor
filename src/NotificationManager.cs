@@ -1,0 +1,20 @@
+using Microsoft.Toolkit.Uwp.Notifications;
+
+using System.Windows.Forms;
+
+namespace ExcelTrainingMonitor
+{
+    public static class NotificationManager
+    {
+        public static void ShowNotification(
+            string title,
+            string message)
+        {
+            MessageBox.Show(
+                message,
+                title,
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
+        }
+    }
+}

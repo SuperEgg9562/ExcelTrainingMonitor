@@ -1,0 +1,330 @@
+using ExcelTrainingMonitor.Models;
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Windows.Forms;
+using System.Drawing;
+using System.IO;
+
+namespace ExcelTrainingMonitor
+{
+    public partial class MainForm: Form
+    {
+        private string excelPath = "";
+
+        private FileSystemWatcher watcher;
+
+        [DllImport("user32.dll")]
+        static extern bool SetForegroundWindow(IntPtr hWnd);
+
+        public MainForm()
+        {
+            InitializeComponent();
+
+            excelPath = SettingsManager.LoadExcelPath();
+
+            if (!string.IsNullOrWhiteSpace(excelPath))
+            {
+                lblFile.Text = excelPath;
+            }
+
+            if (File.Exists(excelPath))
+            {
+                StartWatcher();
+            }
+
+            this.Resize += MainForm_Resize;
+
+            dgvAlerts.CellFormatting += DgvAlerts_CellFormatting;
+
+            dgvAlerts.EnableHeadersVisualStyles = false;
+
+            dgvAlerts.ColumnHeadersDefaultCellStyle.BackColor =
+                Color.FromArgb(45, 45, 48);
+
+            dgvAlerts.ColumnHeadersDefaultCellStyle.ForeColor =
+                Color.White;
+
+            dgvAlerts.BackgroundColor =
+                Color.FromArgb(30, 30, 30);
+
+            dgvAlerts.DefaultCellStyle.BackColor =
+                Color.FromArgb(37, 37, 38);
+
+            dgvAlerts.DefaultCellStyle.ForeColor =
+                Color.White;
+
+            dgvAlerts.GridColor =
+                Color.Black;
+
+            dgvAlerts.RowHeadersVisible = false;
+
+            dgvAlerts.BorderStyle = BorderStyle.None;
+
+            dgvAlerts.CellBorderStyle =
+                DataGridViewCellBorderStyle.SingleHorizontal;
+
+            dgvAlerts.DefaultCellStyle.SelectionBackColor =
+                Color.FromArgb(70, 70, 70);
+
+            dgvAlerts.DefaultCellStyle.SelectionForeColor =
+                Color.White;
+
+            dgvAlerts.ReadOnly = true;
+
+            dgvAlerts.AllowUserToAddRows = false;
+
+            dgvAlerts.AllowUserToDeleteRows = false;
+
+            dgvAlerts.AllowUserToResizeRows = false;
+
+            dgvAlerts.SelectionMode =
+                DataGridViewSelectionMode.FullRowSelect;
+        }
+
+        private void btnBrowse_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog dialog = new OpenFileDialog();
+
+            dialog.Filter = "Excel Files (*.xlsx)|*.xlsx";
+
+            if (dialog.ShowDialog() == DialogResult.OK)
+            {
+                excelPath = dialog.FileName;
+
+                lblFile.Text = excelPath;
+
+                SettingsManager.SaveExcelPath(excelPath);
+            }
+        }
+
+        private void btnStart_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(excelPath))
+            {
+                MessageBox.Show(
+                    "Select an Excel file first.");
+
+                return;
+            }
+
+            StartWatcher();
+
+            NotificationManager.ShowNotification(
+                "Excel Monitor",
+                "Live Monitoring Started");
+
+            RunScan();
+        }
+
+        private void btnStop_Click(object sender, EventArgs e)
+        {
+            if (watcher != null)
+            {
+                watcher.EnableRaisingEvents = false;
+
+                watcher.Dispose();
+
+                watcher = null;
+            }
+
+            NotificationManager.ShowNotification(
+                "Excel Monitor",
+                "Monitoring Stopped");
+        }
+
+        private void RunScan()
+        {
+            if (string.IsNullOrWhiteSpace(excelPath))
+                return;
+
+            List<TrainingAlert> alerts =
+                ExcelMonitor.ScanFile(excelPath);
+
+            dgvAlerts.DataSource = null;
+            dgvAlerts.DataSource = alerts;
+
+
+            List<TrainingAlert> newAlerts =
+                AlertStateManager.GetNewAlerts(alerts);
+
+            if (newAlerts.Count > 0)
+            {
+                foreach (var alert in newAlerts)
+                {
+                    string message =
+                        alert.EmployeeName +
+                        "\n" +
+                        alert.Category +
+                        "\n" +
+                        alert.Status;
+
+                    NotificationManager.ShowNotification(
+                        "NEW TRAINING ALERT",
+                        message);
+                }
+
+                ForceForeground();
+            }
+
+            int reminderHours =
+                (int)numReminderHours.Value;
+
+            if (MinderScheduler.FileNeedsReminder(
+                excelPath,
+                reminderHours))
+            {
+                NotificationManager.ShowNotification(
+                    "Reminder",
+                    "Excel file has not been updated.");
+            }
+        }
+
+        private void StartWatcher()
+        {
+            if (watcher != null)
+            {
+                watcher.EnableRaisingEvents = false;
+
+                watcher.Dispose();
+            }
+
+            watcher = new FileSystemWatcher();
+
+            watcher.Path =
+                Path.GetDirectoryName(excelPath);
+
+            watcher.Filter =
+                Path.GetFileName(excelPath);
+
+            watcher.NotifyFilter =
+                NotifyFilters.LastWrite
+                | NotifyFilters.Size
+                | NotifyFilters.FileName;
+
+            watcher.Changed += Watcher_Changed;
+
+            watcher.Created += Watcher_Changed;
+
+            watcher.Renamed += Watcher_Changed;
+
+            watcher.EnableRaisingEvents = true;
+        }
+
+        private void Watcher_Changed(
+        object sender,
+        FileSystemEventArgs e)
+        {
+            try
+            {
+                
+                System.Threading.Thread.Sleep(1000);
+
+                this.Invoke(new Action(() =>
+                {
+                    RunScan();
+
+                    NotificationManager.ShowNotification(
+                        "Excel Updated",
+                        "Training matrix changed.");
+                }));
+            }
+            catch
+            {
+            }
+        }
+        private void DgvAlerts_CellFormatting(
+        object sender,
+        DataGridViewCellFormattingEventArgs e)
+        {
+            if (e.RowIndex < 0)
+                return;
+
+            DataGridViewRow row =
+                dgvAlerts.Rows[e.RowIndex];
+
+            if (row.Cells["Status"].Value == null)
+                return;
+
+            string status =
+                row.Cells["Status"].Value.ToString();
+
+            row.DefaultCellStyle.SelectionForeColor =
+                Color.White;
+
+            if (status == "Not Trained")
+            {
+                row.DefaultCellStyle.BackColor =
+                    Color.DarkRed;
+
+                row.DefaultCellStyle.ForeColor =
+                    Color.White;
+
+                row.DefaultCellStyle.SelectionBackColor =
+                    Color.Red;
+            }
+            else if (status == "In Training")
+            {
+                row.DefaultCellStyle.BackColor =
+                    Color.Goldenrod;
+
+                row.DefaultCellStyle.ForeColor =
+                    Color.Black;
+
+                row.DefaultCellStyle.SelectionBackColor =
+                    Color.Orange;
+            }
+            else if (status == "Complete")
+            {
+                row.DefaultCellStyle.BackColor =
+                    Color.DarkGreen;
+
+                row.DefaultCellStyle.ForeColor =
+                    Color.White;
+
+                row.DefaultCellStyle.SelectionBackColor =
+                    Color.Green;
+            }
+        }
+
+        private void ForceForeground()
+        {
+            this.WindowState = FormWindowState.Normal;
+
+            this.Show();
+
+            this.Activate();
+
+            SetForegroundWindow(this.Handle);
+        }
+
+        private void MainForm_Resize(object sender, EventArgs e)
+        {
+            if (chkMinimizeTray.Checked &&
+                this.WindowState == FormWindowState.Minimized)
+            {
+                this.Hide();
+
+                notifyIcon1.BalloonTipTitle =
+                    "Excel Training Monitor";
+
+                notifyIcon1.BalloonTipText =
+                    "Still running in background.";
+
+                notifyIcon1.ShowBalloonTip(2000);
+            }
+        }
+
+        private void notifyIcon1_DoubleClick(
+            object sender,
+            EventArgs e)
+        {
+            this.Show();
+
+            this.WindowState =
+                FormWindowState.Normal;
+
+            ForceForeground();
+        }
+    }
+}

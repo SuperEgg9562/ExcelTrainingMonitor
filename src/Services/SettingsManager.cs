@@ -1,0 +1,23 @@
+using System.IO;
+
+namespace ExcelTrainingMonitor
+{
+    public static class SettingsManager
+    {
+        private static readonly string ConfigPath =
+            "config.txt";
+
+        public static void SaveExcelPath(string path)
+        {
+            File.WriteAllText(ConfigPath, path);
+        }
+
+        public static string LoadExcelPath()
+        {
+            if (!File.Exists(ConfigPath))
+                return "";
+
+            return File.ReadAllText(ConfigPath);
+        }
+    }
+}
