@@ -1,4 +1,4 @@
-using ExcelTrainingMonitor.Models;
+﻿using ExcelTrainingMonitor.Models;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -34,7 +34,10 @@ namespace ExcelTrainingMonitor
                 StartWatcher();
             }
 
-            this.Resize += MainForm_Resize;
+            if (OperatingSystem.IsWindows())
+            {
+                this.Resize += MainForm_Resize;
+            }
 
             dgvAlerts.CellFormatting += DgvAlerts_CellFormatting;
             dgvAlerts.EnableHeadersVisualStyles = false;
