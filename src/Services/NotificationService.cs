@@ -6,7 +6,8 @@ namespace ExcelTrainingMonitor.Services
     {
         public static void Show(string title, string message)
         {
-            MessageBox.Show(message, title, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            using var form = new ScrollableNotificationForm(title, message);
+            form.ShowDialog();
         }
     }
 }

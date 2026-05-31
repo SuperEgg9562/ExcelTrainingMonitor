@@ -76,14 +76,14 @@ namespace ExcelTrainingMonitor
                         {
                             status = "Not Trained";
                         }
-
-
                         else if (value == "1")
                         {
                             status = "In Training";
                         }
-
-
+                        else if (value == "2")
+                        {
+                            status = "Complete";
+                        }
                         else
                         {
                             continue;

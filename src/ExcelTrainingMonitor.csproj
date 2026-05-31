@@ -9,8 +9,8 @@
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <AssemblyVersion>1.0.15.15</AssemblyVersion>
-    <FileVersion>1.0.15.15</FileVersion>
+    <AssemblyVersion>1.0.27.27</AssemblyVersion>
+    <FileVersion>1.0.27.27</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +20,12 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.104.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Themes\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>
