@@ -1,9 +1,8 @@
-using ExcelTrainingMonitor.Models;
+﻿using ExcelTrainingMonitor.Models;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using ExcelTrainingMonitor.Services;
 using System.Windows.Forms;
 using System.Drawing;
 using System.IO;
@@ -230,9 +229,8 @@ namespace ExcelTrainingMonitor
                     NotificationManager.ShowNotification("Excel Updated", "Training matrix changed.");
                 }));
             }
-            catch (Exception ex)
+            catch
             {
-                System.Diagnostics.Trace.WriteLine($"Watcher_Changed error: {ex}");
             }
         }
         private void DgvAlerts_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)

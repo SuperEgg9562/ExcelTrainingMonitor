@@ -1,9 +1,8 @@
-using ExcelTrainingMonitor.Models;
+﻿using ExcelTrainingMonitor.Models;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
-using ExcelTrainingMonitor.Services;
 using System.Windows.Forms;
 using System.Drawing;
 using System.IO;

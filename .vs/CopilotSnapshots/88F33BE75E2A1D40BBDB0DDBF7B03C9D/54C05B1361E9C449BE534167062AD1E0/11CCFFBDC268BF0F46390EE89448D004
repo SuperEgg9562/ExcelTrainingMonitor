@@ -1,6 +1,6 @@
-using System;
+﻿using Microsoft.Toolkit.Uwp.Notifications;
+
 using System.Windows.Forms;
-using ExcelTrainingMonitor.Services;
 
 namespace ExcelTrainingMonitor
 {
@@ -10,7 +10,11 @@ namespace ExcelTrainingMonitor
             string title,
             string message)
         {
-            NotificationService.Show(title, message);
+            MessageBox.Show(
+                message,
+                title,
+                MessageBoxButtons.OK,
+                MessageBoxIcon.Information);
         }
     }
 }

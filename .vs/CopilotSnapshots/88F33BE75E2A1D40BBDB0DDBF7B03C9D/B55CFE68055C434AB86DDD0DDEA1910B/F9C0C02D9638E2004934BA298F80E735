@@ -1,9 +1,7 @@
-using ExcelTrainingMonitor.Models;
+﻿using ExcelTrainingMonitor.Models;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Runtime.Versioning;
-using ExcelTrainingMonitor.Services;
 using System.Windows.Forms;
 using System.Drawing;
 using System.IO;
@@ -19,7 +17,6 @@ namespace ExcelTrainingMonitor
         private List<TrainingAlert> currentAlerts = new List<TrainingAlert>();
         private List<TrainingAlert> previousAlerts = new List<TrainingAlert>();
 
-        [SupportedOSPlatform("windows")]
         [DllImport("user32.dll")]
         static extern bool SetForegroundWindow(IntPtr hWnd);
 
@@ -230,9 +227,8 @@ namespace ExcelTrainingMonitor
                     NotificationManager.ShowNotification("Excel Updated", "Training matrix changed.");
                 }));
             }
-            catch (Exception ex)
+            catch
             {
-                System.Diagnostics.Trace.WriteLine($"Watcher_Changed error: {ex}");
             }
         }
         private void DgvAlerts_CellFormatting(object sender, DataGridViewCellFormattingEventArgs e)
@@ -274,10 +270,7 @@ namespace ExcelTrainingMonitor
             this.WindowState = FormWindowState.Normal;
             this.Show();
             this.Activate();
-            if (OperatingSystem.IsWindows())
-            {
-                SetForegroundWindow(this.Handle);
-            }
+            SetForegroundWindow(this.Handle);
         }
 
         private void MainForm_Resize(object sender, EventArgs e)
