@@ -1,6 +1,7 @@
 using ExcelTrainingMonitor.Models;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using ExcelTrainingMonitor.Services;
@@ -23,6 +24,7 @@ namespace ExcelTrainingMonitor
         private AppSettings appSettings;
         private List<TrainingAlert> currentAlerts = new List<TrainingAlert>();
         private List<TrainingAlert> previousAlerts = new List<TrainingAlert>();
+        private BindingList<TrainingAlert> currentAlertBinding = new BindingList<TrainingAlert>();
 
         [SupportedOSPlatform("windows")]
         [DllImport("user32.dll")]
@@ -60,6 +62,9 @@ namespace ExcelTrainingMonitor
 
             dgvAlerts.CellFormatting += DgvAlerts_CellFormatting;
             ConfigureGrid(dgvAlerts);
+            dgvAlerts.ReadOnly = false;
+            dgvAlerts.AllowUserToAddRows = true;
+            dgvAlerts.AllowUserToDeleteRows = true;
 
             ConfigureGrid(dgvHistory);
             RefreshHistoryGrid();
@@ -85,6 +90,10 @@ namespace ExcelTrainingMonitor
             {
                 cboTheme.SelectedIndex = 0;
             }
+
+            chkNtfyEnabled.Checked = appSettings.NtfyEnabled;
+            txtNtfyTopic.Text = appSettings.NtfyTopic;
+            txtNtfyEmail.Text = appSettings.NtfyEmail;
         }
 
         private void WireSettingsEvents()
@@ -94,6 +103,9 @@ namespace ExcelTrainingMonitor
             chkReminderEnabled.CheckedChanged += SettingsControl_Changed;
             dtpReminderDate.ValueChanged += SettingsControl_Changed;
             cboTheme.SelectedIndexChanged += SettingsControl_Changed;
+            chkNtfyEnabled.CheckedChanged += SettingsControl_Changed;
+            txtNtfyTopic.TextChanged += SettingsControl_Changed;
+            txtNtfyEmail.TextChanged += SettingsControl_Changed;
         }
 
         private void SettingsControl_Changed(object sender, EventArgs e)
@@ -115,6 +127,9 @@ namespace ExcelTrainingMonitor
             appSettings.ReminderEnabled = chkReminderEnabled.Checked;
             appSettings.ReminderDateTime = dtpReminderDate.Value;
             appSettings.ThemeName = cboTheme.SelectedItem?.ToString() ?? "Dark";
+            appSettings.NtfyEnabled = chkNtfyEnabled.Checked;
+            appSettings.NtfyTopic = txtNtfyTopic.Text.Trim();
+            appSettings.NtfyEmail = txtNtfyEmail.Text.Trim();
             SettingsManager.Save(appSettings);
         }
 
@@ -263,10 +278,10 @@ namespace ExcelTrainingMonitor
                     })
                     .ToList();
 
-            dgvAlerts.DataSource = null;
-            dgvAlerts.DataSource = alerts;
-
             currentAlerts = alerts;
+            currentAlertBinding = new BindingList<TrainingAlert>(alerts);
+            dgvAlerts.DataSource = null;
+            dgvAlerts.DataSource = currentAlertBinding;
             UpdateCharts(alerts);
 
             List<TrainingAlert> newAlerts = AlertStateManager.GetNewAlerts(alerts);
@@ -407,6 +422,21 @@ namespace ExcelTrainingMonitor
             NotificationManager.ShowNotification(
                 "Reminder",
                 $"Reminder due: {dtpReminderDate.Value:yyyy-MM-dd HH:mm}\r\nExcel file: {excelPath}");
+
+            _ = SendNtfyReminderAsync();
+        }
+
+        private async System.Threading.Tasks.Task SendNtfyReminderAsync()
+        {
+            try
+            {
+                SaveSettingsFromControls();
+                await NtfyService.SendReminderAsync(appSettings, GetEditableAlerts());
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine($"ntfy reminder failed: {ex}");
+            }
         }
 
         private void ConfigureGrid(DataGridView grid)
@@ -434,6 +464,154 @@ namespace ExcelTrainingMonitor
         {
             dgvHistory.DataSource = null;
             dgvHistory.DataSource = HistoryManager.GetHistory();
+        }
+
+        private void btnNewExcel_Click(object sender, EventArgs e)
+        {
+            using var dialog = new SaveFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx",
+                FileName = "TrainingMonitor.xlsx"
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            ExcelMonitor.CreateTemplate(dialog.FileName);
+            excelPath = dialog.FileName;
+            lblFile.Text = excelPath;
+            SaveSettingsFromControls();
+            StartWatcher();
+            RunScan();
+            NotificationManager.ShowNotification("Excel Created", dialog.FileName);
+        }
+
+        private void btnSaveExcel_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(excelPath))
+            {
+                using var dialog = new SaveFileDialog
+                {
+                    Filter = "Excel Files (*.xlsx)|*.xlsx",
+                    FileName = "TrainingMonitor.xlsx"
+                };
+
+                if (dialog.ShowDialog(this) != DialogResult.OK)
+                    return;
+
+                excelPath = dialog.FileName;
+                lblFile.Text = excelPath;
+            }
+
+            List<TrainingAlert> alerts = GetEditableAlerts();
+            ExcelMonitor.SaveTrainingData(excelPath, alerts);
+            currentAlerts = alerts;
+            SaveSettingsFromControls();
+            UpdateDashboard(alerts);
+            UpdateCharts(alerts);
+            NotificationManager.ShowNotification("Excel Saved", "Training grid edits were saved.");
+        }
+
+        private void btnExportExcel_Click(object sender, EventArgs e)
+        {
+            using var dialog = new SaveFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx",
+                FileName = "TrainingExport.xlsx"
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            ExcelMonitor.ExportFlatWorkbook(dialog.FileName, GetEditableAlerts());
+            NotificationManager.ShowNotification("Excel Exported", dialog.FileName);
+        }
+
+        private void btnExportCsv_Click(object sender, EventArgs e)
+        {
+            bool exportHistory = tabControl1.SelectedTab == tabHistory;
+            using var dialog = new SaveFileDialog
+            {
+                Filter = "CSV Files (*.csv)|*.csv",
+                FileName = exportHistory ? "TrainingHistory.csv" : "TrainingAlerts.csv"
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            if (exportHistory)
+            {
+                ExportService.ExportHistoryCsv(dialog.FileName, HistoryManager.GetHistory());
+            }
+            else
+            {
+                ExportService.ExportAlertsCsv(dialog.FileName, GetEditableAlerts());
+            }
+
+            NotificationManager.ShowNotification("CSV Exported", dialog.FileName);
+        }
+
+        private void btnPrintPdf_Click(object sender, EventArgs e)
+        {
+            PrintReportService.PrintReport(
+                this,
+                GetEditableAlerts(),
+                HistoryManager.GetHistory(),
+                statusPieChart,
+                openPieChart);
+        }
+
+        private async void btnTestNtfy_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                SaveSettingsFromControls();
+                await NtfyService.SendReminderAsync(appSettings, GetEditableAlerts());
+                NotificationManager.ShowNotification("ntfy.sh", "Test reminder sent.");
+            }
+            catch (Exception ex)
+            {
+                NotificationManager.ShowNotification("ntfy.sh Failed", ex.Message);
+            }
+        }
+
+        private List<TrainingAlert> GetEditableAlerts()
+        {
+            dgvAlerts.EndEdit();
+
+            if (dgvAlerts.DataSource is BindingList<TrainingAlert> binding)
+            {
+                return binding
+                    .Where(IsValidAlert)
+                    .Select(CloneAlert)
+                    .ToList();
+            }
+
+            return currentAlerts
+                .Where(IsValidAlert)
+                .Select(CloneAlert)
+                .ToList();
+        }
+
+        private static bool IsValidAlert(TrainingAlert alert)
+        {
+            return alert != null &&
+                   !string.IsNullOrWhiteSpace(alert.EmployeeName) &&
+                   !string.IsNullOrWhiteSpace(alert.Category) &&
+                   !string.IsNullOrWhiteSpace(alert.Status);
+        }
+
+        private static TrainingAlert CloneAlert(TrainingAlert alert)
+        {
+            return new TrainingAlert
+            {
+                EmployeeName = alert.EmployeeName?.Trim(),
+                Category = alert.Category?.Trim(),
+                Status = alert.Status?.Trim(),
+                Timestamp = string.IsNullOrWhiteSpace(alert.Timestamp)
+                    ? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss")
+                    : alert.Timestamp
+            };
         }
 
         private void StartWatcher()

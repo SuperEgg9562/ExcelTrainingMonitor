@@ -2,6 +2,12 @@
 bin/
 obj/
 build/
+dist/
+publish/
+theme-analysis/
+tools/
+Extracted.zip
+build/
 publish/
 dist/
 *.user

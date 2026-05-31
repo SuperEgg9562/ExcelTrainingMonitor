@@ -10,6 +10,12 @@ namespace ExcelTrainingMonitor
         private GlossyButton btnBrowse;
         private GlossyButton btnStart;
         private GlossyButton btnStop;
+        private GlossyButton btnNewExcel;
+        private GlossyButton btnSaveExcel;
+        private GlossyButton btnExportExcel;
+        private GlossyButton btnExportCsv;
+        private GlossyButton btnPrintPdf;
+        private GlossyButton btnTestNtfy;
         private Label lblFile;
         private Label lblInterval;
         private Label lblReminder;
@@ -19,14 +25,17 @@ namespace ExcelTrainingMonitor
         private Label lblNotTrained;
         private Label lblTraining;
         private Label lblComplete;
-        private NumericUpDown numInterval;
-        private NumericUpDown numReminderHours;
         private NumericUpDown numScanHours;
         private NumericUpDown numScanMinutes;
         private DateTimePicker dtpReminderDate;
         private GlossyCheckBox chkReminderEnabled;
+        private GlossyCheckBox chkNtfyEnabled;
         private GlossyComboBox cboTheme;
         private Label lblTheme;
+        private Label lblNtfyTopic;
+        private Label lblNtfyEmail;
+        private TextBox txtNtfyTopic;
+        private TextBox txtNtfyEmail;
         private TextBox txtSearch;
         private TabControl tabControl1;
         private TabPage tabMonitor;
@@ -42,6 +51,7 @@ namespace ExcelTrainingMonitor
         private TableLayoutPanel mainLayout;
         private TableLayoutPanel topLayout;
         private TableLayoutPanel fileSearchLayout;
+        private FlowLayoutPanel actionLayout;
         private FlowLayoutPanel dashboardLayout;
         private TableLayoutPanel footerLayout;
         private TableLayoutPanel intervalLayout;
@@ -77,6 +87,12 @@ namespace ExcelTrainingMonitor
             btnBrowse = new GlossyButton();
             btnStart = new GlossyButton();
             btnStop = new GlossyButton();
+            btnNewExcel = new GlossyButton();
+            btnSaveExcel = new GlossyButton();
+            btnExportExcel = new GlossyButton();
+            btnExportCsv = new GlossyButton();
+            btnPrintPdf = new GlossyButton();
+            btnTestNtfy = new GlossyButton();
             lblFile = new Label();
             lblInterval = new Label();
             lblReminder = new Label();
@@ -86,14 +102,17 @@ namespace ExcelTrainingMonitor
             lblNotTrained = new Label();
             lblTraining = new Label();
             lblComplete = new Label();
-            numInterval = new NumericUpDown();
-            numReminderHours = new NumericUpDown();
             numScanHours = new NumericUpDown();
             numScanMinutes = new NumericUpDown();
             dtpReminderDate = new DateTimePicker();
             chkReminderEnabled = new GlossyCheckBox();
+            chkNtfyEnabled = new GlossyCheckBox();
             cboTheme = new GlossyComboBox();
             lblTheme = new Label();
+            lblNtfyTopic = new Label();
+            lblNtfyEmail = new Label();
+            txtNtfyTopic = new TextBox();
+            txtNtfyEmail = new TextBox();
             txtSearch = new TextBox();
             tabControl1 = new TabControl();
             tabMonitor = new TabPage();
@@ -109,6 +128,7 @@ namespace ExcelTrainingMonitor
             mainLayout = new TableLayoutPanel();
             topLayout = new TableLayoutPanel();
             fileSearchLayout = new TableLayoutPanel();
+            actionLayout = new FlowLayoutPanel();
             dashboardLayout = new FlowLayoutPanel();
             footerLayout = new TableLayoutPanel();
             intervalLayout = new TableLayoutPanel();
@@ -125,8 +145,6 @@ namespace ExcelTrainingMonitor
             btnWindowMaximize = new GlossyButton();
             btnWindowClose = new GlossyButton();
 
-            ((System.ComponentModel.ISupportInitialize)numInterval).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)numReminderHours).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numScanHours).BeginInit();
             ((System.ComponentModel.ISupportInitialize)numScanMinutes).BeginInit();
             ((System.ComponentModel.ISupportInitialize)dgvAlerts).BeginInit();
@@ -136,6 +154,7 @@ namespace ExcelTrainingMonitor
             mainLayout.SuspendLayout();
             topLayout.SuspendLayout();
             fileSearchLayout.SuspendLayout();
+            actionLayout.SuspendLayout();
             dashboardLayout.SuspendLayout();
             footerLayout.SuspendLayout();
             intervalLayout.SuspendLayout();
@@ -220,6 +239,41 @@ namespace ExcelTrainingMonitor
             btnStop.UseVisualStyleBackColor = true;
             btnStop.Click += btnStop_Click;
 
+            btnNewExcel.AutoSize = true;
+            btnNewExcel.Margin = new Padding(0, 0, 8, 6);
+            btnNewExcel.MinimumSize = new Size(104, 34);
+            btnNewExcel.Name = "btnNewExcel";
+            btnNewExcel.Text = "New Excel";
+            btnNewExcel.Click += btnNewExcel_Click;
+
+            btnSaveExcel.AutoSize = true;
+            btnSaveExcel.Margin = new Padding(0, 0, 8, 6);
+            btnSaveExcel.MinimumSize = new Size(112, 34);
+            btnSaveExcel.Name = "btnSaveExcel";
+            btnSaveExcel.Text = "Save Edits";
+            btnSaveExcel.Click += btnSaveExcel_Click;
+
+            btnExportExcel.AutoSize = true;
+            btnExportExcel.Margin = new Padding(0, 0, 8, 6);
+            btnExportExcel.MinimumSize = new Size(118, 34);
+            btnExportExcel.Name = "btnExportExcel";
+            btnExportExcel.Text = "Export Excel";
+            btnExportExcel.Click += btnExportExcel_Click;
+
+            btnExportCsv.AutoSize = true;
+            btnExportCsv.Margin = new Padding(0, 0, 8, 6);
+            btnExportCsv.MinimumSize = new Size(104, 34);
+            btnExportCsv.Name = "btnExportCsv";
+            btnExportCsv.Text = "Export CSV";
+            btnExportCsv.Click += btnExportCsv_Click;
+
+            btnPrintPdf.AutoSize = true;
+            btnPrintPdf.Margin = new Padding(0, 0, 12, 6);
+            btnPrintPdf.MinimumSize = new Size(104, 34);
+            btnPrintPdf.Name = "btnPrintPdf";
+            btnPrintPdf.Text = "Print PDF";
+            btnPrintPdf.Click += btnPrintPdf_Click;
+
             lblInterval.AutoSize = true;
             lblInterval.Dock = DockStyle.Fill;
             lblInterval.Name = "lblInterval";
@@ -247,9 +301,6 @@ namespace ExcelTrainingMonitor
             numScanMinutes.TabIndex = 6;
             numScanMinutes.Value = new decimal(new int[] { 5, 0, 0, 0 });
 
-            numInterval.Visible = false;
-            numReminderHours.Visible = false;
-
             intervalLayout.ColumnCount = 2;
             intervalLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
             intervalLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50F));
@@ -276,6 +327,11 @@ namespace ExcelTrainingMonitor
             chkReminderEnabled.Dock = DockStyle.Fill;
             chkReminderEnabled.Name = "chkReminderEnabled";
             chkReminderEnabled.Text = "Enable reminder";
+
+            chkNtfyEnabled.AutoSize = true;
+            chkNtfyEnabled.Margin = new Padding(0, 6, 10, 6);
+            chkNtfyEnabled.Name = "chkNtfyEnabled";
+            chkNtfyEnabled.Text = "ntfy.sh";
 
             dtpReminderDate.CustomFormat = "yyyy-MM-dd HH:mm";
             dtpReminderDate.Dock = DockStyle.Fill;
@@ -366,6 +422,48 @@ namespace ExcelTrainingMonitor
             fileSearchLayout.Margin = new Padding(12, 8, 12, 0);
             fileSearchLayout.RowCount = 1;
             fileSearchLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+            lblNtfyTopic.AutoSize = true;
+            lblNtfyTopic.Margin = new Padding(0, 8, 4, 0);
+            lblNtfyTopic.Name = "lblNtfyTopic";
+            lblNtfyTopic.Text = "Topic";
+
+            txtNtfyTopic.Margin = new Padding(0, 4, 10, 6);
+            txtNtfyTopic.Name = "txtNtfyTopic";
+            txtNtfyTopic.Size = new Size(160, 23);
+
+            lblNtfyEmail.AutoSize = true;
+            lblNtfyEmail.Margin = new Padding(0, 8, 4, 0);
+            lblNtfyEmail.Name = "lblNtfyEmail";
+            lblNtfyEmail.Text = "Email";
+
+            txtNtfyEmail.Margin = new Padding(0, 4, 10, 6);
+            txtNtfyEmail.Name = "txtNtfyEmail";
+            txtNtfyEmail.Size = new Size(190, 23);
+
+            btnTestNtfy.AutoSize = true;
+            btnTestNtfy.Margin = new Padding(0, 0, 0, 6);
+            btnTestNtfy.MinimumSize = new Size(98, 34);
+            btnTestNtfy.Name = "btnTestNtfy";
+            btnTestNtfy.Text = "Test ntfy";
+            btnTestNtfy.Click += btnTestNtfy_Click;
+
+            actionLayout.AutoSize = true;
+            actionLayout.Controls.Add(btnNewExcel);
+            actionLayout.Controls.Add(btnSaveExcel);
+            actionLayout.Controls.Add(btnExportExcel);
+            actionLayout.Controls.Add(btnExportCsv);
+            actionLayout.Controls.Add(btnPrintPdf);
+            actionLayout.Controls.Add(chkNtfyEnabled);
+            actionLayout.Controls.Add(lblNtfyTopic);
+            actionLayout.Controls.Add(txtNtfyTopic);
+            actionLayout.Controls.Add(lblNtfyEmail);
+            actionLayout.Controls.Add(txtNtfyEmail);
+            actionLayout.Controls.Add(btnTestNtfy);
+            actionLayout.Dock = DockStyle.Fill;
+            actionLayout.Margin = new Padding(12, 8, 12, 0);
+            actionLayout.Name = "actionLayout";
+            actionLayout.WrapContents = true;
 
             picAccentBar.Dock = DockStyle.Fill;
             picAccentBar.Margin = new Padding(12, 8, 12, 2);
@@ -564,15 +662,17 @@ namespace ExcelTrainingMonitor
             mainLayout.Controls.Add(titleBarLayout, 0, 0);
             mainLayout.Controls.Add(topLayout, 0, 1);
             mainLayout.Controls.Add(fileSearchLayout, 0, 2);
-            mainLayout.Controls.Add(picAccentBar, 0, 3);
-            mainLayout.Controls.Add(dashboardLayout, 0, 4);
-            mainLayout.Controls.Add(tabControl1, 0, 5);
-            mainLayout.Controls.Add(footerLayout, 0, 6);
+            mainLayout.Controls.Add(actionLayout, 0, 3);
+            mainLayout.Controls.Add(picAccentBar, 0, 4);
+            mainLayout.Controls.Add(dashboardLayout, 0, 5);
+            mainLayout.Controls.Add(tabControl1, 0, 6);
+            mainLayout.Controls.Add(footerLayout, 0, 7);
             mainLayout.Dock = DockStyle.Fill;
             mainLayout.Margin = new Padding(0);
             mainLayout.Padding = new Padding(1, 1, 1, 12);
-            mainLayout.RowCount = 7;
+            mainLayout.RowCount = 8;
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 38F));
+            mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             mainLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 12F));
@@ -594,8 +694,6 @@ namespace ExcelTrainingMonitor
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Excel Training Monitor";
 
-            ((System.ComponentModel.ISupportInitialize)numInterval).EndInit();
-            ((System.ComponentModel.ISupportInitialize)numReminderHours).EndInit();
             ((System.ComponentModel.ISupportInitialize)numScanHours).EndInit();
             ((System.ComponentModel.ISupportInitialize)numScanMinutes).EndInit();
             ((System.ComponentModel.ISupportInitialize)dgvAlerts).EndInit();
@@ -608,6 +706,8 @@ namespace ExcelTrainingMonitor
             topLayout.PerformLayout();
             fileSearchLayout.ResumeLayout(false);
             fileSearchLayout.PerformLayout();
+            actionLayout.ResumeLayout(false);
+            actionLayout.PerformLayout();
             dashboardLayout.ResumeLayout(false);
             dashboardLayout.PerformLayout();
             footerLayout.ResumeLayout(false);

@@ -16,47 +16,38 @@ echo ExcelTrainingMonitor Build System
 echo ==========================================
 echo.
 
-echo [1/6] Cleaning old build folders...
+echo [1/5] Cleaning old output folders...
 
-if exist build rd /s /q build
 if exist publish rd /s /q publish
 
-mkdir build
 mkdir publish
 
 echo.
-echo [2/6] Restoring packages...
+echo [2/5] Restoring packages...
 
 dotnet restore %PROJECT%
 
 if errorlevel 1 goto failed
 
 echo.
-echo [3/6] Building Release...
-
-dotnet build %PROJECT% ^
--c Release ^
--p:Version=%VERSION%
-
-if errorlevel 1 goto failed
-
-echo.
-echo [4/6] Publishing Single File EXE...
+echo [3/5] Publishing Single File EXE...
 
 dotnet publish %PROJECT% ^
 -c Release ^
 -r win-x64 ^
+--no-restore ^
 --self-contained true ^
 -p:PublishSingleFile=true ^
 -p:IncludeNativeLibrariesForSelfExtract=true ^
 -p:PublishTrimmed=false ^
+-p:Version=%VERSION% ^
 -o publish
 
 
 if errorlevel 1 goto failed
 
 echo.
-echo [5/6] Creating Release Folder...
+echo [4/5] Creating Release Folder...
 
 mkdir "%OUTPUT%"
 
@@ -68,7 +59,7 @@ if exist CHANGELOG.txt (
 )
 
 echo.
-echo [6/6] Creating ZIP Package...
+echo [5/5] Creating ZIP Package...
 
 powershell -NoProfile -Command ^
 "Compress-Archive -Path '%OUTPUT%\*' -DestinationPath '%OUTPUT%.zip' -Force"
