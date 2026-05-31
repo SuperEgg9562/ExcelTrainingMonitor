@@ -1,14 +1,19 @@
-﻿using ExcelTrainingMonitor.Models;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
 namespace ExcelTrainingMonitor.Models
 {
-    public static class HistoryManager
+    internal static class HistoryManager
     {
+        private static readonly string HistoryFile =
+            Path.Combine(
+                AppDomain.CurrentDomain.BaseDirectory,
+                "History.json");
+
         private static List<HistoryEntry> history =
-            new List<HistoryEntry>();
+            LoadHistory();
 
         public static void Add(
             string employee,
@@ -22,15 +27,63 @@ namespace ExcelTrainingMonitor.Models
                 Category = category,
                 OldStatus = oldStatus,
                 NewStatus = newStatus,
-                Timestamp =
-                    System.DateTime.Now.ToString(
-                        "yyyy-MM-dd HH:mm:ss")
+                Timestamp = DateTime.Now
             });
+
+            SaveHistory();
         }
 
         public static List<HistoryEntry> GetHistory()
         {
-            return history;
+            return new List<HistoryEntry>(history);
+        }
+
+        public static void Clear()
+        {
+            history.Clear();
+            SaveHistory();
+        }
+
+        private static void SaveHistory()
+        {
+            try
+            {
+                string json =
+                    JsonSerializer.Serialize(
+                        history,
+                        new JsonSerializerOptions
+                        {
+                            WriteIndented = true
+                        });
+
+                File.WriteAllText(
+                    HistoryFile,
+                    json);
+            }
+            catch
+            {
+            }
+        }
+
+        private static List<HistoryEntry> LoadHistory()
+        {
+            try
+            {
+                if (!File.Exists(HistoryFile))
+                {
+                    return new List<HistoryEntry>();
+                }
+
+                string json =
+                    File.ReadAllText(HistoryFile);
+
+                return JsonSerializer.Deserialize<List<HistoryEntry>>(json)
+                       ?? new List<HistoryEntry>();
+            }
+            catch
+            {
+                return new List<HistoryEntry>();
+            }
         }
     }
 }

@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ExcelTrainingMonitor.Models
 {
@@ -16,6 +12,6 @@ namespace ExcelTrainingMonitor.Models
 
         public string NewStatus { get; set; }
 
-        public string Timestamp { get; set; }
+        public DateTime Timestamp { get; set; }
     }
 }

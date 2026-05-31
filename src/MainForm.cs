@@ -56,6 +56,7 @@ namespace ExcelTrainingMonitor
             dgvAlerts.AllowUserToDeleteRows = false;
             dgvAlerts.AllowUserToResizeRows = false;
             dgvAlerts.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvHistory.DataSource = HistoryManager.GetHistory();
         }
 
         private void btnBrowse_Click(object sender, EventArgs e)
