@@ -14,6 +14,8 @@ namespace ExcelTrainingMonitor
         private string excelPath = "";
         private FileSystemWatcher watcher;
         private DateTime lastScan = DateTime.MinValue;
+        private List<TrainingAlert> currentAlerts = new List<TrainingAlert>();
+        private List<TrainingAlert> previousAlerts = new List<TrainingAlert>();
 
         [DllImport("user32.dll")]
         static extern bool SetForegroundWindow(IntPtr hWnd);
@@ -106,15 +108,45 @@ namespace ExcelTrainingMonitor
 
             NotificationManager.ShowNotification("Excel Monitor", "Monitoring Stopped");
         }
-
-        private List<TrainingAlert> currentAlerts = new List<TrainingAlert>();
         private void RunScan()
         {
             if (string.IsNullOrWhiteSpace(excelPath))
                 return;
 
-            List<TrainingAlert> alerts =
-                ExcelMonitor.ScanFile(excelPath);
+            List<TrainingAlert> alerts = ExcelMonitor.ScanFile(excelPath);
+
+            UpdateDashboard(alerts);
+
+            foreach (var current in alerts)
+            {
+                var previous =
+                    previousAlerts.FirstOrDefault(x =>
+                        x.EmployeeName == current.EmployeeName &&
+                        x.Category == current.Category);
+
+                if (previous != null)
+                {
+                    if (previous.Status != current.Status)
+                    {
+                        HistoryManager.Add(
+                            current.EmployeeName,
+                            current.Category,
+                            previous.Status,
+                            current.Status);
+                    }
+                }
+            }
+
+            previousAlerts =
+                alerts
+                    .Select(x => new TrainingAlert
+                    {
+                        EmployeeName = x.EmployeeName,
+                        Category = x.Category,
+                        Status = x.Status,
+                        Timestamp = x.Timestamp
+                    })
+                    .ToList();
 
             dgvAlerts.DataSource = null;
             dgvAlerts.DataSource = alerts;
@@ -122,8 +154,7 @@ namespace ExcelTrainingMonitor
             dgvAlerts.AutoResizeRows();
 
 
-            List<TrainingAlert> newAlerts =
-                AlertStateManager.GetNewAlerts(alerts);
+            List<TrainingAlert> newAlerts = AlertStateManager.GetNewAlerts(alerts);
 
             if (newAlerts.Count > 0)
             {
@@ -155,7 +186,9 @@ namespace ExcelTrainingMonitor
             lblComplete.Text = "Complete: " + alerts.Count(x => x.Status == "Complete");
             currentAlerts = alerts;
 
-            UpdateDashboard(alerts);
+            dgvHistory.DataSource = null;
+            dgvHistory.DataSource = HistoryManager.GetHistory();
+
         }
 
         private void StartWatcher()
@@ -275,12 +308,16 @@ namespace ExcelTrainingMonitor
         private void UpdateDashboard(List<TrainingAlert> alerts)
         {
             lblTotal.Text = $"Total: {alerts.Count}";
-
             lblNotTrained.Text = $"Not Trained: {alerts.Count(a => a.Status == "Not Trained")}";
-
             lblTraining.Text = $"In Training: {alerts.Count(a => a.Status == "In Training")}";
-
             lblComplete.Text = $"Complete: {alerts.Count(a => a.Status == "Complete")}";
+
+            pbNotTrained.Maximum = Math.Max(alerts.Count, 1);
+            pbTraining.Maximum = Math.Max(alerts.Count, 1);
+            pbComplete.Maximum = Math.Max(alerts.Count, 1);
+            pbNotTrained.Value = alerts.Count(a => a.Status == "Not Trained");
+            pbTraining.Value = alerts.Count(a => a.Status == "In Training");
+            pbComplete.Value = alerts.Count(a => a.Status == "Complete");
         }
     }
 }

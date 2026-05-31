@@ -3,66 +3,34 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 
-namespace ExcelTrainingMonitor
+namespace ExcelTrainingMonitor.Models
 {
-    internal static class HistoryManager
+    public static class HistoryManager
     {
-        private static readonly string HistoryFile =
-            "history.json";
-
-        public static List<HistoryRecord> Load()
-        {
-            if (!File.Exists(HistoryFile))
-            {
-                return new List<HistoryRecord>();
-            }
-
-            string json =
-                File.ReadAllText(HistoryFile);
-
-            return JsonSerializer.Deserialize<List<HistoryRecord>>(json)
-                   ?? new List<HistoryRecord>();
-        }
-
-        public static void Save(
-            List<HistoryRecord> records)
-        {
-            string json =
-                JsonSerializer.Serialize(
-                    records,
-                    new JsonSerializerOptions
-                    {
-                        WriteIndented = true
-                    });
-
-            File.WriteAllText(
-                HistoryFile,
-                json);
-        }
+        private static List<HistoryEntry> history =
+            new List<HistoryEntry>();
 
         public static void Add(
-            TrainingAlert alert)
+            string employee,
+            string category,
+            string oldStatus,
+            string newStatus)
         {
-            List<HistoryRecord> records =
-                Load();
+            history.Add(new HistoryEntry
+            {
+                Employee = employee,
+                Category = category,
+                OldStatus = oldStatus,
+                NewStatus = newStatus,
+                Timestamp =
+                    System.DateTime.Now.ToString(
+                        "yyyy-MM-dd HH:mm:ss")
+            });
+        }
 
-            records.Add(
-                new HistoryRecord
-                {
-                    EmployeeName =
-                        alert.EmployeeName,
-
-                    Category =
-                        alert.Category,
-
-                    Status =
-                        alert.Status,
-
-                    Timestamp =
-                        alert.Timestamp
-                });
-
-            Save(records);
+        public static List<HistoryEntry> GetHistory()
+        {
+            return history;
         }
     }
 }

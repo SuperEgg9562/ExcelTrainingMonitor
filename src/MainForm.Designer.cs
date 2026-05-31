@@ -26,6 +26,9 @@ namespace ExcelTrainingMonitor
         private System.Windows.Forms.DataGridView dgvHistory;
         private System.Windows.Forms.NotifyIcon notifyIcon1;
         private System.Windows.Forms.CheckBox chkMinimizeTray;
+        private ProgressBar pbNotTrained;
+        private ProgressBar pbTraining;
+        private ProgressBar pbComplete;
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -277,7 +280,23 @@ namespace ExcelTrainingMonitor
             lblNotTrained.ForeColor = Color.Red;
             lblTraining.ForeColor = Color.Goldenrod;
             lblComplete.ForeColor = Color.LimeGreen;
+            //
+            // Progress Bars
             // 
+            pbNotTrained = new ProgressBar();
+            pbTraining = new ProgressBar();
+            pbComplete = new ProgressBar();
+            pbNotTrained.Location = new Point(20, 740);
+            pbTraining.Location = new Point(300, 740);
+            pbComplete.Location = new Point(580, 740);
+            pbNotTrained.Size = new Size(250, 25);
+            pbTraining.Size = new Size(250, 25);
+            pbComplete.Size = new Size(250, 25);
+            //
+            //UpdatDashboard
+            //
+
+            //
             // MainForm
             // 
             AutoScaleDimensions = new SizeF(11F, 18F);
@@ -299,6 +318,9 @@ namespace ExcelTrainingMonitor
             Controls.Add(lblNotTrained);
             Controls.Add(lblTraining);
             Controls.Add(lblComplete);
+            Controls.Add(pbNotTrained);
+            Controls.Add(pbTraining);
+            Controls.Add(pbComplete);
 
             tabMonitor.Controls.Add(dgvAlerts);
 
