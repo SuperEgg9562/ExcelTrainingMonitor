@@ -77,11 +77,6 @@ namespace ExcelTrainingMonitor
 
             dgvAlerts = new DataGridView();
             dgvHistory = new DataGridView();
-            dgvHistory.Columns.Add("Employee", "Employee");
-            dgvHistory.Columns.Add("Category", "Category");
-            dgvHistory.Columns.Add("OldStatus", "Old Status");
-            dgvHistory.Columns.Add("NewStatus", "New Status");
-            dgvHistory.Columns.Add("Timestamp", "Time");
 
             notifyIcon1 = new NotifyIcon(components);
 
@@ -96,7 +91,7 @@ namespace ExcelTrainingMonitor
             btnBrowse.Location = new Point(31, 24);
             btnBrowse.Margin = new Padding(5, 4, 5, 4);
             btnBrowse.Name = "btnBrowse";
-            btnBrowse.Size = new Size(189, 38);
+            btnBrowse.Size = new Size(150, 38);
             btnBrowse.TabIndex = 0;
             btnBrowse.Text = "Browse Excel";
             btnBrowse.UseVisualStyleBackColor = true;
@@ -107,7 +102,7 @@ namespace ExcelTrainingMonitor
             btnStart.Location = new Point(251, 24);
             btnStart.Margin = new Padding(5, 4, 5, 4);
             btnStart.Name = "btnStart";
-            btnStart.Size = new Size(189, 38);
+            btnStart.Size = new Size(120, 38);
             btnStart.TabIndex = 1;
             btnStart.Text = "Start";
             btnStart.UseVisualStyleBackColor = true;
@@ -118,7 +113,7 @@ namespace ExcelTrainingMonitor
             btnStop.Location = new Point(471, 24);
             btnStop.Margin = new Padding(5, 4, 5, 4);
             btnStop.Name = "btnStop";
-            btnStop.Size = new Size(189, 38);
+            btnStop.Size = new Size(120, 38);
             btnStop.TabIndex = 2;
             btnStop.Text = "Stop";
             btnStop.UseVisualStyleBackColor = true;
@@ -129,13 +124,16 @@ namespace ExcelTrainingMonitor
             lblFile.Location = new Point(31, 84);
             lblFile.Margin = new Padding(5, 0, 5, 0);
             lblFile.Name = "lblFile";
-            lblFile.Size = new Size(1414, 30);
+            lblFile.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+            lblFile.AutoEllipsis = true;
+            lblFile.Size = new Size(940, 30);
             lblFile.TabIndex = 3;
             lblFile.Text = "No Excel file selected";
             // 
             // lblInterval
             // 
-            lblInterval.Location = new Point(707, 12);
+            lblInterval.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            lblInterval.Location = new Point(782, 12);
             lblInterval.Margin = new Padding(5, 0, 5, 0);
             lblInterval.Name = "lblInterval";
             lblInterval.Size = new Size(236, 24);
@@ -144,7 +142,8 @@ namespace ExcelTrainingMonitor
             // 
             // lblReminder
             // 
-            lblReminder.Location = new Point(974, 12);
+            lblReminder.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            lblReminder.Location = new Point(1014, 12);
             lblReminder.Margin = new Padding(5, 0, 5, 0);
             lblReminder.Name = "lblReminder";
             lblReminder.Size = new Size(236, 24);
@@ -153,7 +152,8 @@ namespace ExcelTrainingMonitor
             // 
             // numInterval
             // 
-            numInterval.Location = new Point(707, 36);
+            numInterval.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            numInterval.Location = new Point(782, 36);
             numInterval.Margin = new Padding(5, 4, 5, 4);
             numInterval.Maximum = new decimal(new int[] { 1440, 0, 0, 0 });
             numInterval.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
@@ -164,7 +164,8 @@ namespace ExcelTrainingMonitor
             // 
             // numReminderHours
             // 
-            numReminderHours.Location = new Point(974, 36);
+            numReminderHours.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+            numReminderHours.Location = new Point(1014, 36);
             numReminderHours.Margin = new Padding(5, 4, 5, 4);
             numReminderHours.Maximum = new decimal(new int[] { 720, 0, 0, 0 });
             numReminderHours.Minimum = new decimal(new int[] { 1, 0, 0, 0 });
@@ -220,6 +221,37 @@ namespace ExcelTrainingMonitor
             dgvHistory.AllowUserToDeleteRows = false;
             dgvHistory.RowHeadersVisible = false;
             dgvHistory.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgvHistory.AutoGenerateColumns = false;
+            dgvHistory.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                DataPropertyName = "Employee",
+                HeaderText = "Employee",
+                Name = "Employee"
+            });
+            dgvHistory.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                DataPropertyName = "Category",
+                HeaderText = "Category",
+                Name = "Category"
+            });
+            dgvHistory.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                DataPropertyName = "OldStatus",
+                HeaderText = "Old Status",
+                Name = "OldStatus"
+            });
+            dgvHistory.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                DataPropertyName = "NewStatus",
+                HeaderText = "New Status",
+                Name = "NewStatus"
+            });
+            dgvHistory.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                DataPropertyName = "Timestamp",
+                HeaderText = "Time",
+                Name = "Timestamp"
+            });
 
             tabHistory.Controls.Add(dgvHistory);
             // 
@@ -233,6 +265,7 @@ namespace ExcelTrainingMonitor
             // 
             chkMinimizeTray.Checked = true;
             chkMinimizeTray.CheckState = CheckState.Checked;
+            chkMinimizeTray.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             chkMinimizeTray.Location = new Point(31, 744);
             chkMinimizeTray.Margin = new Padding(5, 4, 5, 4);
             chkMinimizeTray.Name = "chkMinimizeTray";
@@ -242,10 +275,10 @@ namespace ExcelTrainingMonitor
             // 
             // txtSearch
             // 
-            txtSearch.Location = new Point(1200, 80);
-            txtSearch.Width = 250;
+            txtSearch.Location = new Point(995, 80);
+            txtSearch.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             txtSearch.Name = "txtSearch";
-            txtSearch.Size = new Size(150, 31);
+            txtSearch.Size = new Size(250, 31);
             txtSearch.TabIndex = 0;
 
             txtSearch.TextChanged += TxtSearch_TextChanged;
@@ -253,7 +286,8 @@ namespace ExcelTrainingMonitor
             // tabControl1
             // 
             tabControl1.Location = new Point(20, 130);
-            tabControl1.Size = new Size(1520, 560);
+            tabControl1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            tabControl1.Size = new Size(1225, 560);
             tabControl1.Controls.Add(tabMonitor);
             tabControl1.Controls.Add(tabHistory);
 
@@ -286,6 +320,9 @@ namespace ExcelTrainingMonitor
             pbNotTrained = new ProgressBar();
             pbTraining = new ProgressBar();
             pbComplete = new ProgressBar();
+            pbNotTrained.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            pbTraining.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
+            pbComplete.Anchor = AnchorStyles.Bottom | AnchorStyles.Left;
             pbNotTrained.Location = new Point(20, 740);
             pbTraining.Location = new Point(300, 740);
             pbComplete.Location = new Point(580, 740);
@@ -302,7 +339,8 @@ namespace ExcelTrainingMonitor
             AutoScaleDimensions = new SizeF(11F, 18F);
             AutoScaleMode = AutoScaleMode.Font;
 
-            ClientSize = new Size(1571, 816);
+            ClientSize = new Size(1270, 816);
+            MinimumSize = new Size(1040, 640);
 
             Controls.Add(tabControl1);
             Controls.Add(txtSearch);

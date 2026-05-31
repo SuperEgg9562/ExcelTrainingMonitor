@@ -1,0 +1,9 @@
+.vs/
+bin/
+obj/
+build/
+publish/
+dist/
+*.user
+*.suo
+*.rsuser

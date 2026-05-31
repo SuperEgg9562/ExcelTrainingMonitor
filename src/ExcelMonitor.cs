@@ -18,13 +18,20 @@ namespace ExcelTrainingMonitor
 
             using (var workbook = new XLWorkbook(path))
             {
-                var sheet = workbook.Worksheet("TASKS");
+                if (!workbook.TryGetWorksheet("TASKS", out var sheet))
+                    return alerts;
+
+                var lastRowUsed = sheet.LastRowUsed();
+                var lastColumnUsed = sheet.LastColumnUsed();
+
+                if (lastRowUsed == null || lastColumnUsed == null)
+                    return alerts;
 
                 int lastRow =
-                    sheet.LastRowUsed().RowNumber();
+                    lastRowUsed.RowNumber();
 
                 int lastColumn =
-                    sheet.LastColumnUsed().ColumnNumber();
+                    lastColumnUsed.ColumnNumber();
 
                 
                 int headerRow = 3;
@@ -43,55 +50,55 @@ namespace ExcelTrainingMonitor
                         continue;
 
                     for (int col = 3; col <= lastColumn; col++)
-{
-    var headerCell =
-        sheet.Cell(headerRow, col);
+                    {
+                        var headerCell =
+                            sheet.Cell(headerRow, col);
 
-    string category =
-        headerCell.GetFormattedString()
-        .Trim();
+                        string category =
+                            headerCell.GetFormattedString()
+                            .Trim();
 
-    
-    if (string.IsNullOrWhiteSpace(category))
-        continue;
 
-    var dataCell =
-        sheet.Cell(row, col);
+                        if (string.IsNullOrWhiteSpace(category))
+                            continue;
 
-    string value =
-        dataCell.GetFormattedString()
-        .Trim();
+                        var dataCell =
+                            sheet.Cell(row, col);
 
-    string status = "";
+                        string value =
+                            dataCell.GetFormattedString()
+                            .Trim();
 
-    
-    if (value == "0")
-    {
-        status = "Not Trained";
-    }
+                        string status = "";
 
-    
-    else if (value == "1")
-    {
-        status = "In Training";
-    }
 
-    
-    else
-    {
-        continue;
-    }
+                        if (value == "0")
+                        {
+                            status = "Not Trained";
+                        }
 
-    alerts.Add(new TrainingAlert
-    {
-        EmployeeName = employee,
-        Category = category,
-        Status = status,
-        Timestamp =
-            DateTime.Now.ToString(
-                "yyyy-MM-dd HH:mm:ss")
-    });
-}
+
+                        else if (value == "1")
+                        {
+                            status = "In Training";
+                        }
+
+
+                        else
+                        {
+                            continue;
+                        }
+
+                        alerts.Add(new TrainingAlert
+                        {
+                            EmployeeName = employee,
+                            Category = category,
+                            Status = status,
+                            Timestamp =
+                                DateTime.Now.ToString(
+                                    "yyyy-MM-dd HH:mm:ss")
+                        });
+                    }
                       
                 }
             }

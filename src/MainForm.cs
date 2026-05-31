@@ -59,7 +59,9 @@ namespace ExcelTrainingMonitor
             dgvAlerts.AllowUserToDeleteRows = false;
             dgvAlerts.AllowUserToResizeRows = false;
             dgvAlerts.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
-            dgvHistory.DataSource = HistoryManager.GetHistory();
+
+            ConfigureHistoryGrid();
+            RefreshHistoryGrid();
         }
 
         private void btnBrowse_Click(object sender, EventArgs e)
@@ -154,8 +156,6 @@ namespace ExcelTrainingMonitor
 
             dgvAlerts.DataSource = null;
             dgvAlerts.DataSource = alerts;
-            dgvAlerts.AutoResizeColumns();
-            dgvAlerts.AutoResizeRows();
 
 
             List<TrainingAlert> newAlerts = AlertStateManager.GetNewAlerts(alerts);
@@ -190,9 +190,31 @@ namespace ExcelTrainingMonitor
             lblComplete.Text = "Complete: " + alerts.Count(x => x.Status == "Complete");
             currentAlerts = alerts;
 
+            RefreshHistoryGrid();
+
+        }
+
+        private void ConfigureHistoryGrid()
+        {
+            dgvHistory.EnableHeadersVisualStyles = false;
+            dgvHistory.ColumnHeadersDefaultCellStyle.BackColor = Color.FromArgb(45, 45, 48);
+            dgvHistory.ColumnHeadersDefaultCellStyle.ForeColor = Color.White;
+            dgvHistory.BackgroundColor = Color.FromArgb(30, 30, 30);
+            dgvHistory.DefaultCellStyle.BackColor = Color.FromArgb(37, 37, 38);
+            dgvHistory.DefaultCellStyle.ForeColor = Color.White;
+            dgvHistory.DefaultCellStyle.SelectionBackColor = Color.FromArgb(70, 70, 70);
+            dgvHistory.DefaultCellStyle.SelectionForeColor = Color.White;
+            dgvHistory.GridColor = Color.Black;
+            dgvHistory.BorderStyle = BorderStyle.None;
+            dgvHistory.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
+            dgvHistory.AllowUserToResizeRows = false;
+            dgvHistory.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+        }
+
+        private void RefreshHistoryGrid()
+        {
             dgvHistory.DataSource = null;
             dgvHistory.DataSource = HistoryManager.GetHistory();
-
         }
 
         private void StartWatcher()
@@ -309,8 +331,8 @@ namespace ExcelTrainingMonitor
 
             dgvAlerts.DataSource = currentAlerts
                 .Where(x =>
-                    x.EmployeeName.ToLower().Contains(search) ||
-                    x.Category.ToLower().Contains(search))
+                    (x.EmployeeName ?? "").ToLower().Contains(search) ||
+                    (x.Category ?? "").ToLower().Contains(search))
                 .ToList();
         }
         private void UpdateDashboard(List<TrainingAlert> alerts)

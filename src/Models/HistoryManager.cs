@@ -7,9 +7,14 @@ namespace ExcelTrainingMonitor.Models
 {
     internal static class HistoryManager
     {
+        private static readonly string HistoryDirectory =
+            Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "ExcelTrainingMonitor");
+
         private static readonly string HistoryFile =
             Path.Combine(
-                AppDomain.CurrentDomain.BaseDirectory,
+                HistoryDirectory,
                 "History.json");
 
         private static List<HistoryEntry> history =
@@ -55,6 +60,8 @@ namespace ExcelTrainingMonitor.Models
                         {
                             WriteIndented = true
                         });
+
+                Directory.CreateDirectory(HistoryDirectory);
 
                 File.WriteAllText(
                     HistoryFile,

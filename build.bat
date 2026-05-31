@@ -20,9 +20,6 @@ echo [1/6] Cleaning old build folders...
 
 if exist build rd /s /q build
 if exist publish rd /s /q publish
-if not exist publish\History.json (
-    echo [] > publish\History.json
-)
 
 mkdir build
 mkdir publish

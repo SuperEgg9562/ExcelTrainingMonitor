@@ -19,12 +19,7 @@
     <None Remove="bin\Debug\**" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="config.txt" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.104.2" />
-    <PackageReference Include="Microsoft.Toolkit.Uwp.Notifications" Version="7.1.3" />
   </ItemGroup>
 
 </Project>
