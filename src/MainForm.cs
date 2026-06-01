@@ -28,11 +28,19 @@ namespace ExcelTrainingMonitor
         private List<TrainingAlert> previousAlerts = new List<TrainingAlert>();
         private BindingList<TrainingAlert> currentAlertBinding = new BindingList<TrainingAlert>();
         private DataGridView dgvGridBook;
+        private DataGridView dgvCompliancePlan;
+        private TextBox txtComplianceTerms;
+        private TextBox txtComplianceTitle;
+        private TextBox txtComplianceLegend;
+        private PictureBox picComplianceLogo;
+        private Label lblComplianceLogoPlaceholder;
         private GlossyComboBox cboGridBookSheets;
         private GlossyComboBox cboMinimizeBehavior;
         private GlossyCheckBox chkReminderAgentOnClose;
         private DataTable currentGridBookTable = new DataTable();
+        private DataTable compliancePlanTable = new DataTable();
         private string currentGridBookSheet = "Sheet1";
+        private string compliancePlanPath = "";
 
         [SupportedOSPlatform("windows")]
         [DllImport("user32.dll")]
@@ -50,6 +58,7 @@ namespace ExcelTrainingMonitor
         {
             InitializeComponent();
             CreateGridBookEditorTab();
+            CreateCompliancePlanTab();
             CreateBehaviorControls();
             CreateChartExportControls();
             ApplyFocusedTabLayout();
@@ -595,6 +604,320 @@ namespace ExcelTrainingMonitor
             tabControl1.SelectedIndexChanged += TabControl1_SelectedIndexChanged;
         }
 
+        private void CreateCompliancePlanTab()
+        {
+            var tabCompliance = new TabPage
+            {
+                Name = "tabCompliancePlan",
+                Text = "Compliance Plan",
+                Padding = new Padding(3)
+            };
+
+            var layout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 5,
+                Margin = new Padding(0)
+            };
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+
+            txtComplianceTerms = new TextBox
+            {
+                AcceptsReturn = true,
+                AutoSize = false,
+                Dock = DockStyle.Fill,
+                Height = 46,
+                Margin = new Padding(0, 0, 0, 6),
+                Multiline = true,
+                PlaceholderText = "Technical terms",
+                WordWrap = true
+            };
+            txtComplianceTerms.TextChanged += (s, e) => ResizeComplianceHeaderTextBox(txtComplianceTerms, 46, 180);
+            txtComplianceTerms.SizeChanged += (s, e) => ResizeComplianceHeaderTextBox(txtComplianceTerms, 46, 180);
+
+            var titleLayout = new TableLayoutPanel
+            {
+                AutoSize = true,
+                ColumnCount = 2,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 0, 0, 6),
+                RowCount = 1
+            };
+            titleLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            titleLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 124F));
+
+            txtComplianceTitle = new TextBox
+            {
+                AcceptsReturn = true,
+                AutoSize = false,
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 14F, FontStyle.Bold),
+                Height = 72,
+                Margin = new Padding(0, 0, 6, 0),
+                Multiline = true,
+                PlaceholderText = "Compliance plan title",
+                TextAlign = HorizontalAlignment.Center,
+                WordWrap = true
+            };
+            txtComplianceTitle.TextChanged += (s, e) => ResizeComplianceHeaderTextBox(txtComplianceTitle, 72, 140);
+            txtComplianceTitle.SizeChanged += (s, e) => ResizeComplianceHeaderTextBox(txtComplianceTitle, 72, 140);
+
+            var logoPanel = new Panel
+            {
+                BorderStyle = BorderStyle.FixedSingle,
+                Cursor = Cursors.Hand,
+                Dock = DockStyle.Fill,
+                Height = 72,
+                Margin = new Padding(0),
+                MinimumSize = new Size(118, 72)
+            };
+            picComplianceLogo = new PictureBox
+            {
+                Cursor = Cursors.Hand,
+                Dock = DockStyle.Fill,
+                SizeMode = PictureBoxSizeMode.Zoom
+            };
+            lblComplianceLogoPlaceholder = new Label
+            {
+                Cursor = Cursors.Hand,
+                Dock = DockStyle.Fill,
+                Text = "Click to add logo",
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            logoPanel.Click += ComplianceLogo_Click;
+            picComplianceLogo.Click += ComplianceLogo_Click;
+            lblComplianceLogoPlaceholder.Click += ComplianceLogo_Click;
+            logoPanel.Controls.Add(picComplianceLogo);
+            logoPanel.Controls.Add(lblComplianceLogoPlaceholder);
+            lblComplianceLogoPlaceholder.BringToFront();
+
+            titleLayout.Controls.Add(txtComplianceTitle, 0, 0);
+            titleLayout.Controls.Add(logoPanel, 1, 0);
+
+            txtComplianceLegend = new TextBox
+            {
+                AcceptsReturn = true,
+                AutoSize = false,
+                Dock = DockStyle.Fill,
+                Height = 46,
+                Margin = new Padding(0, 0, 0, 6),
+                Multiline = true,
+                PlaceholderText = "Legend / code explanations",
+                WordWrap = true
+            };
+            txtComplianceLegend.TextChanged += (s, e) => ResizeComplianceHeaderTextBox(txtComplianceLegend, 46, 180);
+            txtComplianceLegend.SizeChanged += (s, e) => ResizeComplianceHeaderTextBox(txtComplianceLegend, 46, 180);
+
+            var toolbar = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 0, 0, 8),
+                WrapContents = true
+            };
+            toolbar.Controls.Add(CreateActionButton("New Plan", btnComplianceNew_Click, 96));
+            toolbar.Controls.Add(CreateActionButton("Open Plan", btnComplianceOpen_Click, 104));
+            toolbar.Controls.Add(CreateActionButton("Save Plan", btnComplianceSave_Click, 100));
+            toolbar.Controls.Add(CreateActionButton("Add Row", btnComplianceAddRow_Click, 92));
+            toolbar.Controls.Add(CreateActionButton("Add Column", btnComplianceAddColumn_Click, 116));
+
+            dgvCompliancePlan = new DataGridView
+            {
+                Dock = DockStyle.Fill,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None,
+                AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None,
+                AllowUserToAddRows = true,
+                AllowUserToDeleteRows = true,
+                RowHeadersWidth = 52,
+                ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize,
+                Name = "dgvCompliancePlan"
+            };
+            dgvCompliancePlan.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+            dgvCompliancePlan.RowTemplate.MinimumHeight = 28;
+            dgvCompliancePlan.CellEndEdit += DgvCompliancePlan_CellEndEdit;
+            dgvCompliancePlan.RowPostPaint += DgvCompliancePlan_RowPostPaint;
+            ConfigureGrid(dgvCompliancePlan);
+            dgvCompliancePlan.ReadOnly = false;
+            dgvCompliancePlan.RowHeadersVisible = true;
+            dgvCompliancePlan.AllowUserToAddRows = true;
+            dgvCompliancePlan.AllowUserToDeleteRows = true;
+            dgvCompliancePlan.AllowUserToResizeColumns = true;
+            dgvCompliancePlan.AllowUserToResizeRows = true;
+
+            compliancePlanTable = GridBookEditorService.LoadSheet("", "", 10, 6);
+            dgvCompliancePlan.DataSource = compliancePlanTable;
+            ResizeCompliancePlanGrid();
+
+            layout.Controls.Add(txtComplianceTerms, 0, 0);
+            layout.Controls.Add(titleLayout, 0, 1);
+            layout.Controls.Add(txtComplianceLegend, 0, 2);
+            layout.Controls.Add(toolbar, 0, 3);
+            layout.Controls.Add(dgvCompliancePlan, 0, 4);
+            tabCompliance.Controls.Add(layout);
+            tabControl1.Controls.Add(tabCompliance);
+        }
+
+        private void ResizeComplianceHeaderTextBox(TextBox textBox, int minimumHeight, int maximumHeight)
+        {
+            if (textBox.ClientSize.Width <= 20)
+                return;
+
+            Size measured = TextRenderer.MeasureText(
+                string.IsNullOrEmpty(textBox.Text) ? " " : textBox.Text + " ",
+                textBox.Font,
+                new Size(textBox.ClientSize.Width - 12, int.MaxValue),
+                TextFormatFlags.TextBoxControl | TextFormatFlags.WordBreak);
+            int desiredHeight = measured.Height + 14;
+            textBox.Height = Math.Clamp(desiredHeight, minimumHeight, maximumHeight);
+            textBox.ScrollBars = desiredHeight > maximumHeight ? ScrollBars.Vertical : ScrollBars.None;
+        }
+
+        private void ComplianceLogo_Click(object sender, EventArgs e)
+        {
+            using var dialog = new OpenFileDialog
+            {
+                Filter = "Image Files|*.png;*.jpg;*.jpeg;*.bmp;*.gif"
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            using var source = Image.FromFile(dialog.FileName);
+            Image logo = new Bitmap(source);
+            picComplianceLogo.Image?.Dispose();
+            picComplianceLogo.Image = logo;
+            lblComplianceLogoPlaceholder.Visible = false;
+        }
+
+        private void ResizeCompliancePlanGrid()
+        {
+            if (dgvCompliancePlan.Columns.Count == 0)
+                return;
+
+            dgvCompliancePlan.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
+            int evenColumnWidth = dgvCompliancePlan.Columns
+                .Cast<DataGridViewColumn>()
+                .Max(column => column.Width);
+            evenColumnWidth = Math.Clamp(evenColumnWidth, 90, 320);
+
+            foreach (DataGridViewColumn column in dgvCompliancePlan.Columns)
+            {
+                column.MinimumWidth = 90;
+                column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
+                column.Width = evenColumnWidth;
+            }
+
+            dgvCompliancePlan.AutoResizeRows(DataGridViewAutoSizeRowsMode.AllCells);
+            int evenRowHeight = dgvCompliancePlan.Rows
+                .Cast<DataGridViewRow>()
+                .Where(row => !row.IsNewRow)
+                .Select(row => row.Height)
+                .DefaultIfEmpty(28)
+                .Max();
+            evenRowHeight = Math.Clamp(evenRowHeight, 28, 160);
+
+            foreach (DataGridViewRow row in dgvCompliancePlan.Rows)
+                row.Height = evenRowHeight;
+        }
+
+        private void DgvCompliancePlan_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+        {
+            ResizeCompliancePlanGrid();
+        }
+
+        private void DgvCompliancePlan_RowPostPaint(object sender, DataGridViewRowPostPaintEventArgs e)
+        {
+            TextRenderer.DrawText(
+                e.Graphics,
+                (e.RowIndex + 1).ToString(),
+                dgvCompliancePlan.Font,
+                new Rectangle(e.RowBounds.Left, e.RowBounds.Top, dgvCompliancePlan.RowHeadersWidth - 4, e.RowBounds.Height),
+                Color.FromArgb(0, 255, 40),
+                TextFormatFlags.Right | TextFormatFlags.VerticalCenter);
+        }
+
+        private void btnComplianceNew_Click(object sender, EventArgs e)
+        {
+            compliancePlanPath = "";
+            txtComplianceTerms.Clear();
+            txtComplianceTitle.Clear();
+            txtComplianceLegend.Clear();
+            picComplianceLogo.Image?.Dispose();
+            picComplianceLogo.Image = null;
+            lblComplianceLogoPlaceholder.Visible = true;
+            compliancePlanTable = GridBookEditorService.LoadSheet("", "", 10, 6);
+            dgvCompliancePlan.DataSource = compliancePlanTable;
+            ResizeCompliancePlanGrid();
+        }
+
+        private void btnComplianceOpen_Click(object sender, EventArgs e)
+        {
+            using var dialog = new OpenFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx"
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            string[] sheets = GridBookEditorService.GetSheetNames(dialog.FileName);
+            if (sheets.Length == 0)
+                return;
+
+            string sheetName = sheets.FirstOrDefault(name =>
+                string.Equals(name, "Compliance Plan", StringComparison.OrdinalIgnoreCase)) ?? sheets[0];
+
+            compliancePlanPath = dialog.FileName;
+            txtComplianceTerms.Clear();
+            txtComplianceTitle.Text = Path.GetFileNameWithoutExtension(dialog.FileName);
+            txtComplianceLegend.Clear();
+            picComplianceLogo.Image?.Dispose();
+            picComplianceLogo.Image = null;
+            lblComplianceLogoPlaceholder.Visible = true;
+            compliancePlanTable = GridBookEditorService.LoadSheet(compliancePlanPath, sheetName, 10, 6);
+            dgvCompliancePlan.DataSource = compliancePlanTable;
+            ResizeCompliancePlanGrid();
+        }
+
+        private void btnComplianceSave_Click(object sender, EventArgs e)
+        {
+            dgvCompliancePlan.EndEdit();
+
+            if (string.IsNullOrWhiteSpace(compliancePlanPath))
+            {
+                using var dialog = new SaveFileDialog
+                {
+                    Filter = "Excel Files (*.xlsx)|*.xlsx",
+                    FileName = "CompliancePlan.xlsx"
+                };
+
+                if (dialog.ShowDialog(this) != DialogResult.OK)
+                    return;
+
+                compliancePlanPath = dialog.FileName;
+            }
+
+            GridBookEditorService.SaveSheet(compliancePlanPath, "Compliance Plan", compliancePlanTable);
+            NotificationManager.ShowNotification("Compliance Plan Saved", compliancePlanPath);
+        }
+
+        private void btnComplianceAddRow_Click(object sender, EventArgs e)
+        {
+            compliancePlanTable.Rows.Add(compliancePlanTable.NewRow());
+            ResizeCompliancePlanGrid();
+        }
+
+        private void btnComplianceAddColumn_Click(object sender, EventArgs e)
+        {
+            compliancePlanTable.Columns.Add(GridBookEditorService.ColumnName(compliancePlanTable.Columns.Count));
+            ResizeCompliancePlanGrid();
+        }
+
         private void CreateBehaviorControls()
         {
             btnNewExcel.Visible = false;
@@ -663,15 +986,15 @@ namespace ExcelTrainingMonitor
 
         private void ApplyFocusedTabLayout()
         {
-            bool gridBookMode = tabControl1.SelectedTab?.Name == "tabGridBookEditor";
+            bool focusedGridMode = tabControl1.SelectedTab?.Name is "tabGridBookEditor" or "tabCompliancePlan";
 
-            topLayout.Visible = !gridBookMode;
-            fileSearchLayout.Visible = !gridBookMode;
-            actionLayout.Visible = !gridBookMode;
-            picAccentBar.Visible = !gridBookMode;
-            dashboardLayout.Visible = !gridBookMode;
-            footerLayout.Visible = !gridBookMode;
-            tabControl1.Margin = gridBookMode
+            topLayout.Visible = !focusedGridMode;
+            fileSearchLayout.Visible = !focusedGridMode;
+            actionLayout.Visible = !focusedGridMode;
+            picAccentBar.Visible = !focusedGridMode;
+            dashboardLayout.Visible = !focusedGridMode;
+            footerLayout.Visible = !focusedGridMode;
+            tabControl1.Margin = focusedGridMode
                 ? new Padding(8, 8, 8, 8)
                 : new Padding(12, 0, 12, 12);
         }
