@@ -686,10 +686,10 @@ namespace ExcelTrainingMonitor
 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1100, 720);
+            ClientSize = new Size(1280, 820);
             Controls.Add(mainLayout);
             FormBorderStyle = FormBorderStyle.None;
-            MinimumSize = new Size(820, 560);
+            MinimumSize = new Size(1060, 680);
             Name = "MainForm";
             StartPosition = FormStartPosition.CenterScreen;
             Text = "Excel Training Monitor";

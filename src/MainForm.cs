@@ -27,12 +27,12 @@ namespace ExcelTrainingMonitor
         private List<TrainingAlert> currentAlerts = new List<TrainingAlert>();
         private List<TrainingAlert> previousAlerts = new List<TrainingAlert>();
         private BindingList<TrainingAlert> currentAlertBinding = new BindingList<TrainingAlert>();
-        private DataGridView dgvWorkbook;
-        private GlossyComboBox cboWorkbookSheets;
+        private DataGridView dgvGridBook;
+        private GlossyComboBox cboGridBookSheets;
         private GlossyComboBox cboMinimizeBehavior;
         private GlossyCheckBox chkReminderAgentOnClose;
-        private DataTable currentWorkbookTable = new DataTable();
-        private string currentWorkbookSheet = "Sheet1";
+        private DataTable currentGridBookTable = new DataTable();
+        private string currentGridBookSheet = "Sheet1";
 
         [SupportedOSPlatform("windows")]
         [DllImport("user32.dll")]
@@ -49,9 +49,10 @@ namespace ExcelTrainingMonitor
         public MainForm()
         {
             InitializeComponent();
-            CreateWorkbookEditorTab();
+            CreateGridBookEditorTab();
             CreateBehaviorControls();
             CreateChartExportControls();
+            ApplyFocusedTabLayout();
 
             appSettings = SettingsManager.Load();
             excelPath = appSettings.ExcelPath;
@@ -67,7 +68,7 @@ namespace ExcelTrainingMonitor
             if (File.Exists(excelPath))
             {
                 StartWatcher();
-                LoadWorkbookEditor(excelPath);
+                LoadGridBookEditor(excelPath);
             }
 
             this.Resize += MainForm_Resize;
@@ -164,7 +165,7 @@ namespace ExcelTrainingMonitor
             dgvHistory.Refresh();
             statusPieChart.Refresh();
             openPieChart.Refresh();
-            dgvWorkbook?.Refresh();
+            dgvGridBook?.Refresh();
             Invalidate();
         }
 
@@ -251,7 +252,7 @@ namespace ExcelTrainingMonitor
                 if (File.Exists(excelPath))
                 {
                     StartWatcher();
-                    LoadWorkbookEditor(excelPath);
+                    LoadGridBookEditor(excelPath);
                 }
             }
         }
@@ -516,12 +517,12 @@ namespace ExcelTrainingMonitor
             dgvHistory.DataSource = HistoryManager.GetHistory();
         }
 
-        private void CreateWorkbookEditorTab()
+        private void CreateGridBookEditorTab()
         {
             var tabEditor = new TabPage
             {
-                Name = "tabWorkbookEditor",
-                Text = "Workbook Editor",
+                Name = "tabGridBookEditor",
+                Text = "GridBook Editor",
                 Padding = new Padding(3)
             };
 
@@ -543,8 +544,8 @@ namespace ExcelTrainingMonitor
                 WrapContents = true
             };
 
-            GlossyButton btnEditorNew = CreateActionButton("New Workbook", btnEditorNew_Click, 126);
-            GlossyButton btnEditorOpen = CreateActionButton("Open Workbook", btnEditorOpen_Click, 132);
+            GlossyButton btnEditorNew = CreateActionButton("New GridBook", btnEditorNew_Click, 124);
+            GlossyButton btnEditorOpen = CreateActionButton("Open GridBook", btnEditorOpen_Click, 130);
             GlossyButton btnEditorSave = CreateActionButton("Save Sheet", btnEditorSave_Click, 108);
             GlossyButton btnEditorSaveAs = CreateActionButton("Save As", btnEditorSaveAs_Click, 96);
             GlossyButton btnEditorExport = CreateActionButton("Export Copy", btnEditorExport_Click, 112);
@@ -552,17 +553,17 @@ namespace ExcelTrainingMonitor
             GlossyButton btnEditorAddRow = CreateActionButton("Add Row", btnEditorAddRow_Click, 92);
             GlossyButton btnEditorAddColumn = CreateActionButton("Add Column", btnEditorAddColumn_Click, 116);
 
-            cboWorkbookSheets = new GlossyComboBox
+            cboGridBookSheets = new GlossyComboBox
             {
-                Name = "cboWorkbookSheets",
-                Width = 180,
+                Name = "cboGridBookSheets",
+                Width = 200,
                 Margin = new Padding(0, 0, 8, 6)
             };
-            cboWorkbookSheets.SelectedIndexChanged += cboWorkbookSheets_SelectedIndexChanged;
+            cboGridBookSheets.SelectedIndexChanged += cboGridBookSheets_SelectedIndexChanged;
 
             toolbar.Controls.Add(btnEditorNew);
             toolbar.Controls.Add(btnEditorOpen);
-            toolbar.Controls.Add(cboWorkbookSheets);
+            toolbar.Controls.Add(cboGridBookSheets);
             toolbar.Controls.Add(btnEditorAddSheet);
             toolbar.Controls.Add(btnEditorAddRow);
             toolbar.Controls.Add(btnEditorAddColumn);
@@ -570,25 +571,28 @@ namespace ExcelTrainingMonitor
             toolbar.Controls.Add(btnEditorSaveAs);
             toolbar.Controls.Add(btnEditorExport);
 
-            dgvWorkbook = new DataGridView
+            dgvGridBook = new DataGridView
             {
                 Dock = DockStyle.Fill,
                 AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None,
                 AllowUserToAddRows = true,
                 AllowUserToDeleteRows = true,
                 RowHeadersWidth = 52,
-                Name = "dgvWorkbook"
+                ColumnHeadersHeight = 32,
+                Name = "dgvGridBook"
             };
-            dgvWorkbook.RowPostPaint += DgvWorkbook_RowPostPaint;
-            ConfigureGrid(dgvWorkbook);
-            dgvWorkbook.ReadOnly = false;
-            dgvWorkbook.AllowUserToAddRows = true;
-            dgvWorkbook.AllowUserToDeleteRows = true;
+            dgvGridBook.RowTemplate.Height = 28;
+            dgvGridBook.RowPostPaint += DgvGridBook_RowPostPaint;
+            ConfigureGrid(dgvGridBook);
+            dgvGridBook.ReadOnly = false;
+            dgvGridBook.AllowUserToAddRows = true;
+            dgvGridBook.AllowUserToDeleteRows = true;
 
             editorLayout.Controls.Add(toolbar, 0, 0);
-            editorLayout.Controls.Add(dgvWorkbook, 0, 1);
+            editorLayout.Controls.Add(dgvGridBook, 0, 1);
             tabEditor.Controls.Add(editorLayout);
             tabControl1.Controls.Add(tabEditor);
+            tabControl1.SelectedIndexChanged += TabControl1_SelectedIndexChanged;
         }
 
         private void CreateBehaviorControls()
@@ -652,6 +656,26 @@ namespace ExcelTrainingMonitor
             tabCharts.Controls.Add(chartPageLayout);
         }
 
+        private void TabControl1_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            ApplyFocusedTabLayout();
+        }
+
+        private void ApplyFocusedTabLayout()
+        {
+            bool gridBookMode = tabControl1.SelectedTab?.Name == "tabGridBookEditor";
+
+            topLayout.Visible = !gridBookMode;
+            fileSearchLayout.Visible = !gridBookMode;
+            actionLayout.Visible = !gridBookMode;
+            picAccentBar.Visible = !gridBookMode;
+            dashboardLayout.Visible = !gridBookMode;
+            footerLayout.Visible = !gridBookMode;
+            tabControl1.Margin = gridBookMode
+                ? new Padding(8, 8, 8, 8)
+                : new Padding(12, 0, 12, 12);
+        }
+
         private GlossyButton CreateActionButton(string text, EventHandler handler, int width)
         {
             var button = new GlossyButton
@@ -665,46 +689,51 @@ namespace ExcelTrainingMonitor
             return button;
         }
 
-        private void LoadWorkbookEditor(string path)
+        private void LoadGridBookEditor(string path)
         {
             if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
                 return;
 
-            string previousSheet = cboWorkbookSheets.SelectedItem?.ToString();
-            cboWorkbookSheets.Items.Clear();
-            cboWorkbookSheets.Items.AddRange(WorkbookEditorService.GetSheetNames(path));
+            string previousSheet = cboGridBookSheets.SelectedItem?.ToString();
+            cboGridBookSheets.Items.Clear();
+            cboGridBookSheets.Items.AddRange(GridBookEditorService.GetSheetNames(path));
 
-            if (cboWorkbookSheets.Items.Count == 0)
+            if (cboGridBookSheets.Items.Count == 0)
                 return;
 
-            int index = !string.IsNullOrWhiteSpace(previousSheet) && cboWorkbookSheets.Items.Contains(previousSheet)
-                ? cboWorkbookSheets.Items.IndexOf(previousSheet)
+            int index = !string.IsNullOrWhiteSpace(previousSheet) && cboGridBookSheets.Items.Contains(previousSheet)
+                ? cboGridBookSheets.Items.IndexOf(previousSheet)
                 : 0;
 
-            cboWorkbookSheets.SelectedIndex = index;
+            cboGridBookSheets.SelectedIndex = index;
         }
 
-        private void LoadWorkbookSheet(string sheetName)
+        private void LoadGridBookSheet(string sheetName)
         {
             if (string.IsNullOrWhiteSpace(excelPath) || !File.Exists(excelPath) || string.IsNullOrWhiteSpace(sheetName))
                 return;
 
-            currentWorkbookSheet = sheetName;
-            currentWorkbookTable = WorkbookEditorService.LoadSheet(excelPath, sheetName);
-            dgvWorkbook.DataSource = currentWorkbookTable;
-            tabControl1.SelectedTab = tabControl1.TabPages["tabWorkbookEditor"];
+            currentGridBookSheet = sheetName;
+            currentGridBookTable = GridBookEditorService.LoadSheet(excelPath, sheetName);
+            dgvGridBook.DataSource = currentGridBookTable;
+            foreach (DataGridViewColumn column in dgvGridBook.Columns)
+            {
+                column.Width = Math.Max(column.Width, 110);
+            }
+
+            tabControl1.SelectedTab = tabControl1.TabPages["tabGridBookEditor"];
         }
 
-        private void SaveCurrentWorkbookSheet()
+        private void SaveCurrentGridBookSheet()
         {
-            dgvWorkbook.EndEdit();
+            dgvGridBook.EndEdit();
 
             if (string.IsNullOrWhiteSpace(excelPath))
             {
                 using var dialog = new SaveFileDialog
                 {
                     Filter = "Excel Files (*.xlsx)|*.xlsx",
-                    FileName = "Workbook.xlsx"
+                    FileName = "GridBook.xlsx"
                 };
 
                 if (dialog.ShowDialog(this) != DialogResult.OK)
@@ -714,10 +743,10 @@ namespace ExcelTrainingMonitor
                 lblFile.Text = excelPath;
             }
 
-            WorkbookEditorService.SaveSheet(excelPath, currentWorkbookSheet, currentWorkbookTable);
+            GridBookEditorService.SaveSheet(excelPath, currentGridBookSheet, currentGridBookTable);
             SaveSettingsFromControls();
-            LoadWorkbookEditor(excelPath);
-            NotificationManager.ShowNotification("Workbook Saved", $"{currentWorkbookSheet} saved.");
+            LoadGridBookEditor(excelPath);
+            NotificationManager.ShowNotification("GridBook Saved", $"{currentGridBookSheet} saved.");
         }
 
         private void btnEditorNew_Click(object sender, EventArgs e)
@@ -725,18 +754,18 @@ namespace ExcelTrainingMonitor
             using var dialog = new SaveFileDialog
             {
                 Filter = "Excel Files (*.xlsx)|*.xlsx",
-                FileName = "Workbook.xlsx"
+                FileName = "GridBook.xlsx"
             };
 
             if (dialog.ShowDialog(this) != DialogResult.OK)
                 return;
 
-            WorkbookEditorService.CreateBlankWorkbook(dialog.FileName);
+            GridBookEditorService.CreateBlankGridBook(dialog.FileName);
             excelPath = dialog.FileName;
             lblFile.Text = excelPath;
             SaveSettingsFromControls();
             StartWatcher();
-            LoadWorkbookEditor(excelPath);
+            LoadGridBookEditor(excelPath);
         }
 
         private void btnEditorOpen_Click(object sender, EventArgs e)
@@ -753,12 +782,12 @@ namespace ExcelTrainingMonitor
             lblFile.Text = excelPath;
             SaveSettingsFromControls();
             StartWatcher();
-            LoadWorkbookEditor(excelPath);
+            LoadGridBookEditor(excelPath);
         }
 
         private void btnEditorSave_Click(object sender, EventArgs e)
         {
-            SaveCurrentWorkbookSheet();
+            SaveCurrentGridBookSheet();
         }
 
         private void btnEditorSaveAs_Click(object sender, EventArgs e)
@@ -774,21 +803,21 @@ namespace ExcelTrainingMonitor
 
             if (!string.IsNullOrWhiteSpace(excelPath) && File.Exists(excelPath))
             {
-                SaveCurrentWorkbookSheet();
-                WorkbookEditorService.ExportWorkbook(excelPath, dialog.FileName);
+                SaveCurrentGridBookSheet();
+                GridBookEditorService.ExportGridBook(excelPath, dialog.FileName);
             }
             else
             {
-                dgvWorkbook.EndEdit();
-                WorkbookEditorService.SaveSheet(dialog.FileName, currentWorkbookSheet, currentWorkbookTable);
+                dgvGridBook.EndEdit();
+                GridBookEditorService.SaveSheet(dialog.FileName, currentGridBookSheet, currentGridBookTable);
             }
 
             excelPath = dialog.FileName;
             lblFile.Text = excelPath;
             SaveSettingsFromControls();
             StartWatcher();
-            LoadWorkbookEditor(excelPath);
-            NotificationManager.ShowNotification("Workbook Saved As", dialog.FileName);
+            LoadGridBookEditor(excelPath);
+            NotificationManager.ShowNotification("GridBook Saved As", dialog.FileName);
         }
 
         private void btnEditorExport_Click(object sender, EventArgs e)
@@ -805,9 +834,9 @@ namespace ExcelTrainingMonitor
             if (dialog.ShowDialog(this) != DialogResult.OK)
                 return;
 
-            SaveCurrentWorkbookSheet();
-            WorkbookEditorService.ExportWorkbook(excelPath, dialog.FileName);
-            NotificationManager.ShowNotification("Workbook Exported", dialog.FileName);
+            SaveCurrentGridBookSheet();
+            GridBookEditorService.ExportGridBook(excelPath, dialog.FileName);
+            NotificationManager.ShowNotification("GridBook Exported", dialog.FileName);
         }
 
         private void btnEditorAddSheet_Click(object sender, EventArgs e)
@@ -819,45 +848,45 @@ namespace ExcelTrainingMonitor
                     return;
             }
 
-            string sheetName = $"Sheet{cboWorkbookSheets.Items.Count + 1}";
-            WorkbookEditorService.AddSheet(excelPath, sheetName);
-            LoadWorkbookEditor(excelPath);
-            cboWorkbookSheets.SelectedItem = sheetName;
+            string sheetName = $"Sheet{cboGridBookSheets.Items.Count + 1}";
+            GridBookEditorService.AddSheet(excelPath, sheetName);
+            LoadGridBookEditor(excelPath);
+            cboGridBookSheets.SelectedItem = sheetName;
         }
 
         private void btnEditorAddRow_Click(object sender, EventArgs e)
         {
-            if (currentWorkbookTable.Columns.Count == 0)
+            if (currentGridBookTable.Columns.Count == 0)
             {
-                currentWorkbookTable = WorkbookEditorService.LoadSheet(excelPath, currentWorkbookSheet);
-                dgvWorkbook.DataSource = currentWorkbookTable;
+                currentGridBookTable = GridBookEditorService.LoadSheet(excelPath, currentGridBookSheet);
+                dgvGridBook.DataSource = currentGridBookTable;
             }
 
-            currentWorkbookTable.Rows.Add(currentWorkbookTable.NewRow());
+            currentGridBookTable.Rows.Add(currentGridBookTable.NewRow());
         }
 
         private void btnEditorAddColumn_Click(object sender, EventArgs e)
         {
-            string name = WorkbookEditorService.ColumnName(currentWorkbookTable.Columns.Count);
-            currentWorkbookTable.Columns.Add(name);
+            string name = GridBookEditorService.ColumnName(currentGridBookTable.Columns.Count);
+            currentGridBookTable.Columns.Add(name);
         }
 
-        private void cboWorkbookSheets_SelectedIndexChanged(object sender, EventArgs e)
+        private void cboGridBookSheets_SelectedIndexChanged(object sender, EventArgs e)
         {
-            if (cboWorkbookSheets.SelectedItem == null)
+            if (cboGridBookSheets.SelectedItem == null)
                 return;
 
-            LoadWorkbookSheet(cboWorkbookSheets.SelectedItem.ToString());
+            LoadGridBookSheet(cboGridBookSheets.SelectedItem.ToString());
         }
 
-        private void DgvWorkbook_RowPostPaint(object sender, DataGridViewRowPostPaintEventArgs e)
+        private void DgvGridBook_RowPostPaint(object sender, DataGridViewRowPostPaintEventArgs e)
         {
             string rowNumber = (e.RowIndex + 1).ToString();
             TextRenderer.DrawText(
                 e.Graphics,
                 rowNumber,
-                dgvWorkbook.Font,
-                new Rectangle(e.RowBounds.Left, e.RowBounds.Top, dgvWorkbook.RowHeadersWidth - 4, e.RowBounds.Height),
+                dgvGridBook.Font,
+                new Rectangle(e.RowBounds.Left, e.RowBounds.Top, dgvGridBook.RowHeadersWidth - 4, e.RowBounds.Height),
                 Color.FromArgb(0, 255, 40),
                 TextFormatFlags.Right | TextFormatFlags.VerticalCenter);
         }
@@ -894,7 +923,7 @@ namespace ExcelTrainingMonitor
             SaveSettingsFromControls();
             StartWatcher();
             RunScan();
-            LoadWorkbookEditor(excelPath);
+            LoadGridBookEditor(excelPath);
             NotificationManager.ShowNotification("Excel Created", dialog.FileName);
         }
 
@@ -921,7 +950,7 @@ namespace ExcelTrainingMonitor
             SaveSettingsFromControls();
             UpdateDashboard(alerts);
             UpdateCharts(alerts);
-            LoadWorkbookEditor(excelPath);
+            LoadGridBookEditor(excelPath);
             NotificationManager.ShowNotification("Excel Saved", "Training grid edits were saved.");
         }
 

@@ -6,9 +6,9 @@ using System.Linq;
 
 namespace ExcelTrainingMonitor.Services
 {
-    internal static class WorkbookEditorService
+    internal static class GridBookEditorService
     {
-        public static void CreateBlankWorkbook(string path)
+        public static void CreateBlankGridBook(string path)
         {
             using var workbook = new XLWorkbook();
             var sheet = workbook.Worksheets.Add("Sheet1");
@@ -108,10 +108,10 @@ namespace ExcelTrainingMonitor.Services
             }
         }
 
-        public static void ExportWorkbook(string sourcePath, string destinationPath)
+        public static void ExportGridBook(string sourcePath, string destinationPath)
         {
             if (!File.Exists(sourcePath))
-                throw new FileNotFoundException("Workbook not found.", sourcePath);
+                throw new FileNotFoundException("GridBook not found.", sourcePath);
 
             File.Copy(sourcePath, destinationPath, true);
         }
