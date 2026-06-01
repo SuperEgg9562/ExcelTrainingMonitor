@@ -4,6 +4,7 @@ obj/
 build/
 dist/
 publish/
+artifacts/
 theme-analysis/
 tools/
 Extracted.zip

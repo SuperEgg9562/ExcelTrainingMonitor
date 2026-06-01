@@ -1,0 +1,49 @@
+name: Build Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Build packages
+        shell: cmd
+        run: build.bat < nul
+
+      - name: Collect release assets
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path upload | Out-Null
+          Copy-Item artifacts/release/*.zip upload/
+          if (Test-Path artifacts/installer/*.exe) {
+            Copy-Item artifacts/installer/*.exe upload/
+          }
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ExcelTrainingMonitor-release-assets
+          path: upload/*
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: upload/*
+          generate_release_notes: true
