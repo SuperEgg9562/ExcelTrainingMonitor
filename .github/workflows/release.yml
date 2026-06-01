@@ -41,6 +41,11 @@ jobs:
           name: ExcelTrainingMonitor-release-assets
           path: upload/*
 
+      - name: Debug ref
+        run: |
+          echo github.ref=${{ github.ref }}
+          echo github.ref_name=${{ github.ref_name }}
+
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v2
