@@ -13,5 +13,8 @@ namespace ExcelTrainingMonitor.Models
         public bool NtfyEnabled { get; set; } = false;
         public string NtfyTopic { get; set; } = "";
         public string NtfyEmail { get; set; } = "";
+        public string MinimizeBehavior { get; set; } = "Tray";
+        public bool StartReminderAgentOnClose { get; set; } = true;
+        public DateTime LastAgentReminderSentFor { get; set; } = DateTime.MinValue;
     }
 }

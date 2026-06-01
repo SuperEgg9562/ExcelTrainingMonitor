@@ -2,6 +2,8 @@ using ExcelTrainingMonitor.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Data;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using ExcelTrainingMonitor.Services;
@@ -25,6 +27,12 @@ namespace ExcelTrainingMonitor
         private List<TrainingAlert> currentAlerts = new List<TrainingAlert>();
         private List<TrainingAlert> previousAlerts = new List<TrainingAlert>();
         private BindingList<TrainingAlert> currentAlertBinding = new BindingList<TrainingAlert>();
+        private DataGridView dgvWorkbook;
+        private GlossyComboBox cboWorkbookSheets;
+        private GlossyComboBox cboMinimizeBehavior;
+        private GlossyCheckBox chkReminderAgentOnClose;
+        private DataTable currentWorkbookTable = new DataTable();
+        private string currentWorkbookSheet = "Sheet1";
 
         [SupportedOSPlatform("windows")]
         [DllImport("user32.dll")]
@@ -41,6 +49,9 @@ namespace ExcelTrainingMonitor
         public MainForm()
         {
             InitializeComponent();
+            CreateWorkbookEditorTab();
+            CreateBehaviorControls();
+            CreateChartExportControls();
 
             appSettings = SettingsManager.Load();
             excelPath = appSettings.ExcelPath;
@@ -56,6 +67,7 @@ namespace ExcelTrainingMonitor
             if (File.Exists(excelPath))
             {
                 StartWatcher();
+                LoadWorkbookEditor(excelPath);
             }
 
             this.Resize += MainForm_Resize;
@@ -94,6 +106,8 @@ namespace ExcelTrainingMonitor
             chkNtfyEnabled.Checked = appSettings.NtfyEnabled;
             txtNtfyTopic.Text = appSettings.NtfyTopic;
             txtNtfyEmail.Text = appSettings.NtfyEmail;
+            cboMinimizeBehavior.SelectedItem = appSettings.MinimizeBehavior == "Window" ? "Window" : "Tray";
+            chkReminderAgentOnClose.Checked = appSettings.StartReminderAgentOnClose;
         }
 
         private void WireSettingsEvents()
@@ -106,6 +120,8 @@ namespace ExcelTrainingMonitor
             chkNtfyEnabled.CheckedChanged += SettingsControl_Changed;
             txtNtfyTopic.TextChanged += SettingsControl_Changed;
             txtNtfyEmail.TextChanged += SettingsControl_Changed;
+            cboMinimizeBehavior.SelectedIndexChanged += SettingsControl_Changed;
+            chkReminderAgentOnClose.CheckedChanged += SettingsControl_Changed;
         }
 
         private void SettingsControl_Changed(object sender, EventArgs e)
@@ -130,6 +146,8 @@ namespace ExcelTrainingMonitor
             appSettings.NtfyEnabled = chkNtfyEnabled.Checked;
             appSettings.NtfyTopic = txtNtfyTopic.Text.Trim();
             appSettings.NtfyEmail = txtNtfyEmail.Text.Trim();
+            appSettings.MinimizeBehavior = cboMinimizeBehavior.SelectedItem?.ToString() ?? "Tray";
+            appSettings.StartReminderAgentOnClose = chkReminderAgentOnClose.Checked;
             SettingsManager.Save(appSettings);
         }
 
@@ -146,6 +164,7 @@ namespace ExcelTrainingMonitor
             dgvHistory.Refresh();
             statusPieChart.Refresh();
             openPieChart.Refresh();
+            dgvWorkbook?.Refresh();
             Invalidate();
         }
 
@@ -183,6 +202,36 @@ namespace ExcelTrainingMonitor
             Close();
         }
 
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            SaveSettingsFromControls();
+
+            if (appSettings.StartReminderAgentOnClose && appSettings.ReminderEnabled)
+            {
+                StartReminderAgent();
+            }
+
+            base.OnFormClosing(e);
+        }
+
+        private void StartReminderAgent()
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = Application.ExecutablePath,
+                    Arguments = "--reminder-agent",
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                });
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.WriteLine($"Could not start reminder agent: {ex}");
+            }
+        }
+
         private void btnBrowse_Click(object sender, EventArgs e)
         {
             OpenFileDialog dialog = new OpenFileDialog();
@@ -202,6 +251,7 @@ namespace ExcelTrainingMonitor
                 if (File.Exists(excelPath))
                 {
                     StartWatcher();
+                    LoadWorkbookEditor(excelPath);
                 }
             }
         }
@@ -466,6 +516,367 @@ namespace ExcelTrainingMonitor
             dgvHistory.DataSource = HistoryManager.GetHistory();
         }
 
+        private void CreateWorkbookEditorTab()
+        {
+            var tabEditor = new TabPage
+            {
+                Name = "tabWorkbookEditor",
+                Text = "Workbook Editor",
+                Padding = new Padding(3)
+            };
+
+            var editorLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 2,
+                Margin = new Padding(0)
+            };
+            editorLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            editorLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+
+            var toolbar = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 0, 0, 8),
+                WrapContents = true
+            };
+
+            GlossyButton btnEditorNew = CreateActionButton("New Workbook", btnEditorNew_Click, 126);
+            GlossyButton btnEditorOpen = CreateActionButton("Open Workbook", btnEditorOpen_Click, 132);
+            GlossyButton btnEditorSave = CreateActionButton("Save Sheet", btnEditorSave_Click, 108);
+            GlossyButton btnEditorSaveAs = CreateActionButton("Save As", btnEditorSaveAs_Click, 96);
+            GlossyButton btnEditorExport = CreateActionButton("Export Copy", btnEditorExport_Click, 112);
+            GlossyButton btnEditorAddSheet = CreateActionButton("Add Sheet", btnEditorAddSheet_Click, 104);
+            GlossyButton btnEditorAddRow = CreateActionButton("Add Row", btnEditorAddRow_Click, 92);
+            GlossyButton btnEditorAddColumn = CreateActionButton("Add Column", btnEditorAddColumn_Click, 116);
+
+            cboWorkbookSheets = new GlossyComboBox
+            {
+                Name = "cboWorkbookSheets",
+                Width = 180,
+                Margin = new Padding(0, 0, 8, 6)
+            };
+            cboWorkbookSheets.SelectedIndexChanged += cboWorkbookSheets_SelectedIndexChanged;
+
+            toolbar.Controls.Add(btnEditorNew);
+            toolbar.Controls.Add(btnEditorOpen);
+            toolbar.Controls.Add(cboWorkbookSheets);
+            toolbar.Controls.Add(btnEditorAddSheet);
+            toolbar.Controls.Add(btnEditorAddRow);
+            toolbar.Controls.Add(btnEditorAddColumn);
+            toolbar.Controls.Add(btnEditorSave);
+            toolbar.Controls.Add(btnEditorSaveAs);
+            toolbar.Controls.Add(btnEditorExport);
+
+            dgvWorkbook = new DataGridView
+            {
+                Dock = DockStyle.Fill,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None,
+                AllowUserToAddRows = true,
+                AllowUserToDeleteRows = true,
+                RowHeadersWidth = 52,
+                Name = "dgvWorkbook"
+            };
+            dgvWorkbook.RowPostPaint += DgvWorkbook_RowPostPaint;
+            ConfigureGrid(dgvWorkbook);
+            dgvWorkbook.ReadOnly = false;
+            dgvWorkbook.AllowUserToAddRows = true;
+            dgvWorkbook.AllowUserToDeleteRows = true;
+
+            editorLayout.Controls.Add(toolbar, 0, 0);
+            editorLayout.Controls.Add(dgvWorkbook, 0, 1);
+            tabEditor.Controls.Add(editorLayout);
+            tabControl1.Controls.Add(tabEditor);
+        }
+
+        private void CreateBehaviorControls()
+        {
+            btnNewExcel.Visible = false;
+            btnSaveExcel.Visible = false;
+            btnExportExcel.Visible = false;
+            chkMinimizeTray.Visible = false;
+
+            var lblMinimize = new Label
+            {
+                AutoSize = true,
+                Margin = new Padding(0, 8, 4, 0),
+                Text = "Minimize"
+            };
+
+            cboMinimizeBehavior = new GlossyComboBox
+            {
+                Width = 120,
+                Margin = new Padding(0, 4, 10, 6)
+            };
+            cboMinimizeBehavior.Items.AddRange(new object[] { "Tray", "Window" });
+            cboMinimizeBehavior.SelectedIndex = 0;
+
+            chkReminderAgentOnClose = new GlossyCheckBox
+            {
+                AutoSize = true,
+                Margin = new Padding(0, 6, 10, 6),
+                Text = "Reminder agent on close"
+            };
+
+            actionLayout.Controls.Add(lblMinimize);
+            actionLayout.Controls.Add(cboMinimizeBehavior);
+            actionLayout.Controls.Add(chkReminderAgentOnClose);
+        }
+
+        private void CreateChartExportControls()
+        {
+            var chartToolbar = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                Dock = DockStyle.Top,
+                Margin = new Padding(0, 0, 0, 8)
+            };
+            chartToolbar.Controls.Add(CreateActionButton("Export Status Pie", (s, e) => ExportChart(statusPieChart, "StatusPie.png"), 142));
+            chartToolbar.Controls.Add(CreateActionButton("Export Open Pie", (s, e) => ExportChart(openPieChart, "OpenTrainingPie.png"), 136));
+
+            tabCharts.Controls.Remove(chartsLayout);
+
+            var chartPageLayout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 2,
+                Margin = new Padding(0)
+            };
+            chartPageLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            chartPageLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            chartPageLayout.Controls.Add(chartToolbar, 0, 0);
+            chartPageLayout.Controls.Add(chartsLayout, 0, 1);
+            tabCharts.Controls.Add(chartPageLayout);
+        }
+
+        private GlossyButton CreateActionButton(string text, EventHandler handler, int width)
+        {
+            var button = new GlossyButton
+            {
+                AutoSize = true,
+                Margin = new Padding(0, 0, 8, 6),
+                MinimumSize = new Size(width, 34),
+                Text = text
+            };
+            button.Click += handler;
+            return button;
+        }
+
+        private void LoadWorkbookEditor(string path)
+        {
+            if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+                return;
+
+            string previousSheet = cboWorkbookSheets.SelectedItem?.ToString();
+            cboWorkbookSheets.Items.Clear();
+            cboWorkbookSheets.Items.AddRange(WorkbookEditorService.GetSheetNames(path));
+
+            if (cboWorkbookSheets.Items.Count == 0)
+                return;
+
+            int index = !string.IsNullOrWhiteSpace(previousSheet) && cboWorkbookSheets.Items.Contains(previousSheet)
+                ? cboWorkbookSheets.Items.IndexOf(previousSheet)
+                : 0;
+
+            cboWorkbookSheets.SelectedIndex = index;
+        }
+
+        private void LoadWorkbookSheet(string sheetName)
+        {
+            if (string.IsNullOrWhiteSpace(excelPath) || !File.Exists(excelPath) || string.IsNullOrWhiteSpace(sheetName))
+                return;
+
+            currentWorkbookSheet = sheetName;
+            currentWorkbookTable = WorkbookEditorService.LoadSheet(excelPath, sheetName);
+            dgvWorkbook.DataSource = currentWorkbookTable;
+            tabControl1.SelectedTab = tabControl1.TabPages["tabWorkbookEditor"];
+        }
+
+        private void SaveCurrentWorkbookSheet()
+        {
+            dgvWorkbook.EndEdit();
+
+            if (string.IsNullOrWhiteSpace(excelPath))
+            {
+                using var dialog = new SaveFileDialog
+                {
+                    Filter = "Excel Files (*.xlsx)|*.xlsx",
+                    FileName = "Workbook.xlsx"
+                };
+
+                if (dialog.ShowDialog(this) != DialogResult.OK)
+                    return;
+
+                excelPath = dialog.FileName;
+                lblFile.Text = excelPath;
+            }
+
+            WorkbookEditorService.SaveSheet(excelPath, currentWorkbookSheet, currentWorkbookTable);
+            SaveSettingsFromControls();
+            LoadWorkbookEditor(excelPath);
+            NotificationManager.ShowNotification("Workbook Saved", $"{currentWorkbookSheet} saved.");
+        }
+
+        private void btnEditorNew_Click(object sender, EventArgs e)
+        {
+            using var dialog = new SaveFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx",
+                FileName = "Workbook.xlsx"
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            WorkbookEditorService.CreateBlankWorkbook(dialog.FileName);
+            excelPath = dialog.FileName;
+            lblFile.Text = excelPath;
+            SaveSettingsFromControls();
+            StartWatcher();
+            LoadWorkbookEditor(excelPath);
+        }
+
+        private void btnEditorOpen_Click(object sender, EventArgs e)
+        {
+            using var dialog = new OpenFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx"
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            excelPath = dialog.FileName;
+            lblFile.Text = excelPath;
+            SaveSettingsFromControls();
+            StartWatcher();
+            LoadWorkbookEditor(excelPath);
+        }
+
+        private void btnEditorSave_Click(object sender, EventArgs e)
+        {
+            SaveCurrentWorkbookSheet();
+        }
+
+        private void btnEditorSaveAs_Click(object sender, EventArgs e)
+        {
+            using var dialog = new SaveFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx",
+                FileName = Path.GetFileName(excelPath)
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            if (!string.IsNullOrWhiteSpace(excelPath) && File.Exists(excelPath))
+            {
+                SaveCurrentWorkbookSheet();
+                WorkbookEditorService.ExportWorkbook(excelPath, dialog.FileName);
+            }
+            else
+            {
+                dgvWorkbook.EndEdit();
+                WorkbookEditorService.SaveSheet(dialog.FileName, currentWorkbookSheet, currentWorkbookTable);
+            }
+
+            excelPath = dialog.FileName;
+            lblFile.Text = excelPath;
+            SaveSettingsFromControls();
+            StartWatcher();
+            LoadWorkbookEditor(excelPath);
+            NotificationManager.ShowNotification("Workbook Saved As", dialog.FileName);
+        }
+
+        private void btnEditorExport_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(excelPath) || !File.Exists(excelPath))
+                return;
+
+            using var dialog = new SaveFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx",
+                FileName = Path.GetFileNameWithoutExtension(excelPath) + "-export.xlsx"
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            SaveCurrentWorkbookSheet();
+            WorkbookEditorService.ExportWorkbook(excelPath, dialog.FileName);
+            NotificationManager.ShowNotification("Workbook Exported", dialog.FileName);
+        }
+
+        private void btnEditorAddSheet_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(excelPath))
+            {
+                btnEditorNew_Click(sender, e);
+                if (string.IsNullOrWhiteSpace(excelPath))
+                    return;
+            }
+
+            string sheetName = $"Sheet{cboWorkbookSheets.Items.Count + 1}";
+            WorkbookEditorService.AddSheet(excelPath, sheetName);
+            LoadWorkbookEditor(excelPath);
+            cboWorkbookSheets.SelectedItem = sheetName;
+        }
+
+        private void btnEditorAddRow_Click(object sender, EventArgs e)
+        {
+            if (currentWorkbookTable.Columns.Count == 0)
+            {
+                currentWorkbookTable = WorkbookEditorService.LoadSheet(excelPath, currentWorkbookSheet);
+                dgvWorkbook.DataSource = currentWorkbookTable;
+            }
+
+            currentWorkbookTable.Rows.Add(currentWorkbookTable.NewRow());
+        }
+
+        private void btnEditorAddColumn_Click(object sender, EventArgs e)
+        {
+            string name = WorkbookEditorService.ColumnName(currentWorkbookTable.Columns.Count);
+            currentWorkbookTable.Columns.Add(name);
+        }
+
+        private void cboWorkbookSheets_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (cboWorkbookSheets.SelectedItem == null)
+                return;
+
+            LoadWorkbookSheet(cboWorkbookSheets.SelectedItem.ToString());
+        }
+
+        private void DgvWorkbook_RowPostPaint(object sender, DataGridViewRowPostPaintEventArgs e)
+        {
+            string rowNumber = (e.RowIndex + 1).ToString();
+            TextRenderer.DrawText(
+                e.Graphics,
+                rowNumber,
+                dgvWorkbook.Font,
+                new Rectangle(e.RowBounds.Left, e.RowBounds.Top, dgvWorkbook.RowHeadersWidth - 4, e.RowBounds.Height),
+                Color.FromArgb(0, 255, 40),
+                TextFormatFlags.Right | TextFormatFlags.VerticalCenter);
+        }
+
+        private void ExportChart(Control chart, string defaultName)
+        {
+            using var dialog = new SaveFileDialog
+            {
+                Filter = "PNG Image (*.png)|*.png",
+                FileName = defaultName
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            ChartExportService.Export(chart, dialog.FileName);
+            NotificationManager.ShowNotification("Chart Exported", dialog.FileName);
+        }
+
         private void btnNewExcel_Click(object sender, EventArgs e)
         {
             using var dialog = new SaveFileDialog
@@ -483,6 +894,7 @@ namespace ExcelTrainingMonitor
             SaveSettingsFromControls();
             StartWatcher();
             RunScan();
+            LoadWorkbookEditor(excelPath);
             NotificationManager.ShowNotification("Excel Created", dialog.FileName);
         }
 
@@ -509,6 +921,7 @@ namespace ExcelTrainingMonitor
             SaveSettingsFromControls();
             UpdateDashboard(alerts);
             UpdateCharts(alerts);
+            LoadWorkbookEditor(excelPath);
             NotificationManager.ShowNotification("Excel Saved", "Training grid edits were saved.");
         }
 
@@ -730,7 +1143,7 @@ namespace ExcelTrainingMonitor
 
         private void MainForm_Resize(object sender, EventArgs e)
         {
-            if (chkMinimizeTray.Checked &&
+            if ((cboMinimizeBehavior.SelectedItem?.ToString() ?? "Tray") == "Tray" &&
                 this.WindowState == FormWindowState.Minimized)
             {
                 this.Hide();
