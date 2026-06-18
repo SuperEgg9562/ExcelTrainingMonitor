@@ -773,6 +773,11 @@ namespace ExcelTrainingMonitor
             toolbar.Controls.Add(CreateActionButton("Print Plan", btnCompliancePrint_Click, 100));
             toolbar.Controls.Add(CreateActionButton("Add Row", btnComplianceAddRow_Click, 92));
             toolbar.Controls.Add(CreateActionButton("Add Column", btnComplianceAddColumn_Click, 116));
+            toolbar.Controls.Add(CreateActionButton("Move Row Up", btnComplianceMoveRowUp_Click, 116));
+            toolbar.Controls.Add(CreateActionButton("Move Row Down", btnComplianceMoveRowDown_Click, 132));
+            toolbar.Controls.Add(CreateActionButton("Clear Cells", btnComplianceClearCells_Click, 104));
+            toolbar.Controls.Add(CreateActionButton("Delete Rows", btnComplianceDeleteRows_Click, 112));
+            toolbar.Controls.Add(CreateActionButton("Delete Columns", btnComplianceDeleteColumns_Click, 132));
 
             var footerLayout = new TableLayoutPanel
             {
@@ -853,6 +858,8 @@ namespace ExcelTrainingMonitor
             dgvCompliancePlan.AllowUserToDeleteRows = true;
             dgvCompliancePlan.AllowUserToResizeColumns = true;
             dgvCompliancePlan.AllowUserToResizeRows = true;
+            dgvCompliancePlan.MultiSelect = true;
+            dgvCompliancePlan.SelectionMode = DataGridViewSelectionMode.CellSelect;
 
             compliancePlanTable = GridBookEditorService.LoadSheet("", "", 10, 6);
             dgvCompliancePlan.DataSource = compliancePlanTable;
@@ -1055,7 +1062,127 @@ namespace ExcelTrainingMonitor
 
         private void btnComplianceAddColumn_Click(object sender, EventArgs e)
         {
-            compliancePlanTable.Columns.Add(GridBookEditorService.ColumnName(compliancePlanTable.Columns.Count));
+            int columnNumber = compliancePlanTable.Columns.Count;
+            string columnName;
+            do
+            {
+                columnName = GridBookEditorService.ColumnName(columnNumber++);
+            }
+            while (compliancePlanTable.Columns.Contains(columnName));
+
+            compliancePlanTable.Columns.Add(columnName);
+            ResizeCompliancePlanGrid();
+        }
+
+        private void btnComplianceMoveRowUp_Click(object sender, EventArgs e)
+        {
+            MoveSelectedComplianceRows(-1);
+        }
+
+        private void btnComplianceMoveRowDown_Click(object sender, EventArgs e)
+        {
+            MoveSelectedComplianceRows(1);
+        }
+
+        private void MoveSelectedComplianceRows(int direction)
+        {
+            dgvCompliancePlan.EndEdit();
+            var selectedRows = GetSelectedComplianceRowIndices();
+            if (selectedRows.Count == 0)
+                return;
+
+            int[] orderedRows = direction < 0
+                ? selectedRows.OrderBy(index => index).ToArray()
+                : selectedRows.OrderByDescending(index => index).ToArray();
+
+            foreach (int rowIndex in orderedRows)
+            {
+                int targetIndex = rowIndex + direction;
+                if (targetIndex < 0 || targetIndex >= compliancePlanTable.Rows.Count || selectedRows.Contains(targetIndex))
+                    continue;
+
+                object[] currentValues = compliancePlanTable.Rows[rowIndex].ItemArray;
+                compliancePlanTable.Rows[rowIndex].ItemArray = compliancePlanTable.Rows[targetIndex].ItemArray;
+                compliancePlanTable.Rows[targetIndex].ItemArray = currentValues;
+                selectedRows.Remove(rowIndex);
+                selectedRows.Add(targetIndex);
+            }
+
+            SelectComplianceRows(selectedRows);
+            ResizeCompliancePlanGrid();
+        }
+
+        private HashSet<int> GetSelectedComplianceRowIndices()
+        {
+            var indices = dgvCompliancePlan.SelectedRows
+                .Cast<DataGridViewRow>()
+                .Where(row => !row.IsNewRow)
+                .Select(row => row.Index)
+                .ToHashSet();
+
+            if (indices.Count == 0)
+            {
+                indices = dgvCompliancePlan.SelectedCells
+                    .Cast<DataGridViewCell>()
+                    .Where(cell => cell.RowIndex >= 0 && cell.RowIndex < compliancePlanTable.Rows.Count)
+                    .Select(cell => cell.RowIndex)
+                    .ToHashSet();
+            }
+
+            return indices;
+        }
+
+        private void SelectComplianceRows(IEnumerable<int> rowIndices)
+        {
+            dgvCompliancePlan.ClearSelection();
+            foreach (int rowIndex in rowIndices.Where(index => index >= 0 && index < dgvCompliancePlan.Rows.Count))
+            {
+                foreach (DataGridViewCell cell in dgvCompliancePlan.Rows[rowIndex].Cells)
+                    cell.Selected = true;
+            }
+        }
+
+        private void btnComplianceClearCells_Click(object sender, EventArgs e)
+        {
+            dgvCompliancePlan.EndEdit();
+            foreach (DataGridViewCell cell in dgvCompliancePlan.SelectedCells)
+            {
+                if (!cell.ReadOnly && cell.RowIndex >= 0 && !dgvCompliancePlan.Rows[cell.RowIndex].IsNewRow)
+                    cell.Value = "";
+            }
+
+            ResizeCompliancePlanGrid();
+        }
+
+        private void btnComplianceDeleteRows_Click(object sender, EventArgs e)
+        {
+            dgvCompliancePlan.EndEdit();
+            foreach (int rowIndex in GetSelectedComplianceRowIndices().OrderByDescending(index => index))
+            {
+                if (rowIndex >= 0 && rowIndex < compliancePlanTable.Rows.Count)
+                    compliancePlanTable.Rows.RemoveAt(rowIndex);
+            }
+
+            ResizeCompliancePlanGrid();
+        }
+
+        private void btnComplianceDeleteColumns_Click(object sender, EventArgs e)
+        {
+            dgvCompliancePlan.EndEdit();
+            var columnIndices = dgvCompliancePlan.SelectedCells
+                .Cast<DataGridViewCell>()
+                .Select(cell => cell.ColumnIndex)
+                .ToHashSet();
+
+            if (columnIndices.Count == 0 && dgvCompliancePlan.CurrentCell != null)
+                columnIndices.Add(dgvCompliancePlan.CurrentCell.ColumnIndex);
+
+            foreach (int columnIndex in columnIndices.OrderByDescending(index => index))
+            {
+                if (columnIndex >= 0 && columnIndex < compliancePlanTable.Columns.Count)
+                    compliancePlanTable.Columns.RemoveAt(columnIndex);
+            }
+
             ResizeCompliancePlanGrid();
         }
 
