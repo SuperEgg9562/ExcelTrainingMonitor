@@ -15,6 +15,7 @@ namespace ExcelTrainingMonitor.Services
             string title,
             DateTime planDateTime,
             string legend,
+            string detailIssues,
             DataTable table,
             Image logo)
         {
@@ -36,6 +37,7 @@ namespace ExcelTrainingMonitor.Services
                     title,
                     planDateTime,
                     legend,
+                    detailIssues,
                     table,
                     logo,
                     pageNumber,
@@ -61,6 +63,7 @@ namespace ExcelTrainingMonitor.Services
             string title,
             DateTime planDateTime,
             string legend,
+            string detailIssues,
             DataTable table,
             Image logo,
             int pageNumber,
@@ -117,7 +120,7 @@ namespace ExcelTrainingMonitor.Services
                 headingFont, brush, gridPen, centered, bounds.Left, y, columnWidth, headerHeight);
             y += headerHeight;
 
-            float printableBottom = bounds.Bottom - 44F;
+            float printableBottom = bounds.Bottom - 170F;
             while (nextRow < table.Rows.Count)
             {
                 string[] values = table.Rows[nextRow].ItemArray.Select(value => value?.ToString() ?? "").ToArray();
@@ -133,9 +136,16 @@ namespace ExcelTrainingMonitor.Services
             hasMorePages = nextRow < table.Rows.Count;
             if (!hasMorePages)
             {
-                float signY = Math.Max(y + 14F, bounds.Bottom - 26F);
+                float signY = bounds.Bottom - 154F;
                 graphics.DrawString("Completed by: __________", headingFont, brush, bounds.Left, signY);
                 graphics.DrawString("Signature: __________", headingFont, brush, bounds.Left + 260F, signY);
+
+                float detailTitleY = signY + 28F;
+                graphics.DrawString("Detail issues with corrective actions", headingFont, brush, bounds.Left, detailTitleY);
+                var detailBounds = new RectangleF(bounds.Left, detailTitleY + 20F, bounds.Width, 100F);
+                graphics.DrawRectangle(gridPen, Rectangle.Round(detailBounds));
+                detailBounds.Inflate(-5F, -5F);
+                graphics.DrawString(detailIssues ?? "", textFont, brush, detailBounds);
             }
         }
 

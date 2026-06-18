@@ -32,6 +32,7 @@ namespace ExcelTrainingMonitor
         private TextBox txtComplianceTerms;
         private TextBox txtComplianceTitle;
         private TextBox txtComplianceLegend;
+        private TextBox txtComplianceDetailIssues;
         private DateTimePicker dtpComplianceDateTime;
         private PictureBox picComplianceLogo;
         private Label lblComplianceLogoPlaceholder;
@@ -717,12 +718,15 @@ namespace ExcelTrainingMonitor
             });
             dtpComplianceDateTime = new DateTimePicker
             {
-                CustomFormat = "yyyy-MM-dd HH:mm",
+                CustomFormat = "dddd, dd MMMM yyyy HH:mm",
                 Format = DateTimePickerFormat.Custom,
                 Margin = new Padding(0),
-                Width = 190
+                Width = 280
             };
+            dtpComplianceDateTime.ValueChanged += (s, e) => ResizeComplianceDateTimePicker();
+            dtpComplianceDateTime.FontChanged += (s, e) => ResizeComplianceDateTimePicker();
             dateTimeLayout.Controls.Add(dtpComplianceDateTime);
+            ResizeComplianceDateTimePicker();
 
             txtComplianceLegend = new TextBox
             {
@@ -752,12 +756,24 @@ namespace ExcelTrainingMonitor
             toolbar.Controls.Add(CreateActionButton("Add Row", btnComplianceAddRow_Click, 92));
             toolbar.Controls.Add(CreateActionButton("Add Column", btnComplianceAddColumn_Click, 116));
 
+            var footerLayout = new TableLayoutPanel
+            {
+                AutoSize = true,
+                ColumnCount = 1,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 8, 0, 0),
+                Padding = new Padding(0, 4, 0, 4),
+                RowCount = 3
+            };
+            footerLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            footerLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            footerLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
             var signOffLayout = new FlowLayoutPanel
             {
                 AutoSize = true,
                 Dock = DockStyle.Fill,
-                Margin = new Padding(0, 8, 0, 0),
-                Padding = new Padding(0, 4, 0, 4),
+                Margin = new Padding(0, 0, 0, 8),
                 WrapContents = true
             };
             signOffLayout.Controls.Add(new Label
@@ -774,6 +790,28 @@ namespace ExcelTrainingMonitor
                 Margin = new Padding(0),
                 Text = "Signature: __________"
             });
+
+            var detailIssuesLabel = new Label
+            {
+                AutoSize = true,
+                Font = new Font("Segoe UI", 10F, FontStyle.Bold),
+                Margin = new Padding(0, 0, 0, 4),
+                Text = "Detail issues with corrective actions"
+            };
+            txtComplianceDetailIssues = new TextBox
+            {
+                AcceptsReturn = true,
+                AutoSize = false,
+                Dock = DockStyle.Fill,
+                Height = 108,
+                Margin = new Padding(0),
+                Multiline = true,
+                ScrollBars = ScrollBars.Vertical,
+                WordWrap = true
+            };
+            footerLayout.Controls.Add(signOffLayout, 0, 0);
+            footerLayout.Controls.Add(detailIssuesLabel, 0, 1);
+            footerLayout.Controls.Add(txtComplianceDetailIssues, 0, 2);
 
             dgvCompliancePlan = new DataGridView
             {
@@ -808,7 +846,7 @@ namespace ExcelTrainingMonitor
             layout.Controls.Add(txtComplianceLegend, 0, 3);
             layout.Controls.Add(toolbar, 0, 4);
             layout.Controls.Add(dgvCompliancePlan, 0, 5);
-            layout.Controls.Add(signOffLayout, 0, 6);
+            layout.Controls.Add(footerLayout, 0, 6);
             tabCompliance.Controls.Add(layout);
             tabControl1.Controls.Add(tabCompliance);
         }
@@ -826,6 +864,16 @@ namespace ExcelTrainingMonitor
             int desiredHeight = measured.Height + 14;
             textBox.Height = Math.Clamp(desiredHeight, minimumHeight, maximumHeight);
             textBox.ScrollBars = desiredHeight > maximumHeight ? ScrollBars.Vertical : ScrollBars.None;
+        }
+
+        private void ResizeComplianceDateTimePicker()
+        {
+            if (dtpComplianceDateTime == null)
+                return;
+
+            string displayedValue = dtpComplianceDateTime.Value.ToString("dddd, dd MMMM yyyy HH:mm");
+            int textWidth = TextRenderer.MeasureText(displayedValue, dtpComplianceDateTime.Font).Width;
+            dtpComplianceDateTime.Width = textWidth + SystemInformation.VerticalScrollBarWidth + 28;
         }
 
         private void ComplianceLogo_Click(object sender, EventArgs e)
@@ -898,6 +946,7 @@ namespace ExcelTrainingMonitor
             txtComplianceTerms.Clear();
             txtComplianceTitle.Clear();
             txtComplianceLegend.Clear();
+            txtComplianceDetailIssues.Clear();
             dtpComplianceDateTime.Value = DateTime.Now;
             picComplianceLogo.Image?.Dispose();
             picComplianceLogo.Image = null;
@@ -928,6 +977,7 @@ namespace ExcelTrainingMonitor
             txtComplianceTerms.Clear();
             txtComplianceTitle.Text = Path.GetFileNameWithoutExtension(dialog.FileName);
             txtComplianceLegend.Clear();
+            txtComplianceDetailIssues.Clear();
             dtpComplianceDateTime.Value = DateTime.Now;
             picComplianceLogo.Image?.Dispose();
             picComplianceLogo.Image = null;
@@ -968,6 +1018,7 @@ namespace ExcelTrainingMonitor
                 txtComplianceTitle.Text,
                 dtpComplianceDateTime.Value,
                 txtComplianceLegend.Text,
+                txtComplianceDetailIssues.Text,
                 compliancePlanTable,
                 picComplianceLogo.Image);
         }
