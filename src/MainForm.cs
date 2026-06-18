@@ -34,6 +34,7 @@ namespace ExcelTrainingMonitor
         private TextBox txtComplianceLegend;
         private TextBox txtComplianceDetailIssues;
         private DateTimePicker dtpComplianceDateTime;
+        private DateTimePicker dtpComplianceTime;
         private PictureBox picComplianceLogo;
         private Label lblComplianceLogoPlaceholder;
         private GlossyComboBox cboGridBookSheets;
@@ -718,14 +719,31 @@ namespace ExcelTrainingMonitor
             });
             dtpComplianceDateTime = new DateTimePicker
             {
-                CustomFormat = "dddd, dd MMMM yyyy HH:mm",
+                CustomFormat = "dddd, dd MMMM yyyy",
                 Format = DateTimePickerFormat.Custom,
                 Margin = new Padding(0),
-                Width = 280
+                Width = 240
             };
             dtpComplianceDateTime.ValueChanged += (s, e) => ResizeComplianceDateTimePicker();
             dtpComplianceDateTime.FontChanged += (s, e) => ResizeComplianceDateTimePicker();
             dateTimeLayout.Controls.Add(dtpComplianceDateTime);
+            dateTimeLayout.Controls.Add(new Label
+            {
+                AutoSize = true,
+                Margin = new Padding(14, 7, 8, 0),
+                Text = "Time:"
+            });
+            dtpComplianceTime = new DateTimePicker
+            {
+                CustomFormat = "HH:mm",
+                Format = DateTimePickerFormat.Custom,
+                Margin = new Padding(0),
+                ShowUpDown = true,
+                Width = 82
+            };
+            dtpComplianceTime.ValueChanged += (s, e) => ResizeComplianceDateTimePicker();
+            dtpComplianceTime.FontChanged += (s, e) => ResizeComplianceDateTimePicker();
+            dateTimeLayout.Controls.Add(dtpComplianceTime);
             ResizeComplianceDateTimePicker();
 
             txtComplianceLegend = new TextBox
@@ -868,12 +886,16 @@ namespace ExcelTrainingMonitor
 
         private void ResizeComplianceDateTimePicker()
         {
-            if (dtpComplianceDateTime == null)
+            if (dtpComplianceDateTime == null || dtpComplianceTime == null)
                 return;
 
-            string displayedValue = dtpComplianceDateTime.Value.ToString("dddd, dd MMMM yyyy HH:mm");
-            int textWidth = TextRenderer.MeasureText(displayedValue, dtpComplianceDateTime.Font).Width;
-            dtpComplianceDateTime.Width = textWidth + SystemInformation.VerticalScrollBarWidth + 28;
+            string displayedDate = dtpComplianceDateTime.Value.ToString("dddd, dd MMMM yyyy");
+            int dateWidth = TextRenderer.MeasureText(displayedDate, dtpComplianceDateTime.Font).Width;
+            dtpComplianceDateTime.Width = dateWidth + SystemInformation.VerticalScrollBarWidth + 28;
+
+            string displayedTime = dtpComplianceTime.Value.ToString("HH:mm");
+            int timeWidth = TextRenderer.MeasureText(displayedTime, dtpComplianceTime.Font).Width;
+            dtpComplianceTime.Width = timeWidth + 34;
         }
 
         private void ComplianceLogo_Click(object sender, EventArgs e)
@@ -948,6 +970,7 @@ namespace ExcelTrainingMonitor
             txtComplianceLegend.Clear();
             txtComplianceDetailIssues.Clear();
             dtpComplianceDateTime.Value = DateTime.Now;
+            dtpComplianceTime.Value = DateTime.Now;
             picComplianceLogo.Image?.Dispose();
             picComplianceLogo.Image = null;
             lblComplianceLogoPlaceholder.Visible = true;
@@ -979,6 +1002,7 @@ namespace ExcelTrainingMonitor
             txtComplianceLegend.Clear();
             txtComplianceDetailIssues.Clear();
             dtpComplianceDateTime.Value = DateTime.Now;
+            dtpComplianceTime.Value = DateTime.Now;
             picComplianceLogo.Image?.Dispose();
             picComplianceLogo.Image = null;
             lblComplianceLogoPlaceholder.Visible = true;
@@ -1016,7 +1040,7 @@ namespace ExcelTrainingMonitor
                 this,
                 txtComplianceTerms.Text,
                 txtComplianceTitle.Text,
-                dtpComplianceDateTime.Value,
+                dtpComplianceDateTime.Value.Date + dtpComplianceTime.Value.TimeOfDay,
                 txtComplianceLegend.Text,
                 txtComplianceDetailIssues.Text,
                 compliancePlanTable,
