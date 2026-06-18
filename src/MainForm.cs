@@ -32,6 +32,7 @@ namespace ExcelTrainingMonitor
         private TextBox txtComplianceTerms;
         private TextBox txtComplianceTitle;
         private TextBox txtComplianceLegend;
+        private DateTimePicker dtpComplianceDateTime;
         private PictureBox picComplianceLogo;
         private Label lblComplianceLogoPlaceholder;
         private GlossyComboBox cboGridBookSheets;
@@ -617,14 +618,16 @@ namespace ExcelTrainingMonitor
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 5,
+                RowCount = 7,
                 Margin = new Padding(0)
             };
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
             txtComplianceTerms = new TextBox
             {
@@ -699,6 +702,28 @@ namespace ExcelTrainingMonitor
             titleLayout.Controls.Add(txtComplianceTitle, 0, 0);
             titleLayout.Controls.Add(logoPanel, 1, 0);
 
+            var dateTimeLayout = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 0, 0, 6),
+                WrapContents = false
+            };
+            dateTimeLayout.Controls.Add(new Label
+            {
+                AutoSize = true,
+                Margin = new Padding(0, 7, 8, 0),
+                Text = "Date and time:"
+            });
+            dtpComplianceDateTime = new DateTimePicker
+            {
+                CustomFormat = "yyyy-MM-dd HH:mm",
+                Format = DateTimePickerFormat.Custom,
+                Margin = new Padding(0),
+                Width = 190
+            };
+            dateTimeLayout.Controls.Add(dtpComplianceDateTime);
+
             txtComplianceLegend = new TextBox
             {
                 AcceptsReturn = true,
@@ -723,8 +748,32 @@ namespace ExcelTrainingMonitor
             toolbar.Controls.Add(CreateActionButton("New Plan", btnComplianceNew_Click, 96));
             toolbar.Controls.Add(CreateActionButton("Open Plan", btnComplianceOpen_Click, 104));
             toolbar.Controls.Add(CreateActionButton("Save Plan", btnComplianceSave_Click, 100));
+            toolbar.Controls.Add(CreateActionButton("Print Plan", btnCompliancePrint_Click, 100));
             toolbar.Controls.Add(CreateActionButton("Add Row", btnComplianceAddRow_Click, 92));
             toolbar.Controls.Add(CreateActionButton("Add Column", btnComplianceAddColumn_Click, 116));
+
+            var signOffLayout = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 8, 0, 0),
+                Padding = new Padding(0, 4, 0, 4),
+                WrapContents = true
+            };
+            signOffLayout.Controls.Add(new Label
+            {
+                AutoSize = true,
+                Font = new Font("Segoe UI", 10F),
+                Margin = new Padding(0, 0, 36, 0),
+                Text = "Completed by: __________"
+            });
+            signOffLayout.Controls.Add(new Label
+            {
+                AutoSize = true,
+                Font = new Font("Segoe UI", 10F),
+                Margin = new Padding(0),
+                Text = "Signature: __________"
+            });
 
             dgvCompliancePlan = new DataGridView
             {
@@ -755,9 +804,11 @@ namespace ExcelTrainingMonitor
 
             layout.Controls.Add(txtComplianceTerms, 0, 0);
             layout.Controls.Add(titleLayout, 0, 1);
-            layout.Controls.Add(txtComplianceLegend, 0, 2);
-            layout.Controls.Add(toolbar, 0, 3);
-            layout.Controls.Add(dgvCompliancePlan, 0, 4);
+            layout.Controls.Add(dateTimeLayout, 0, 2);
+            layout.Controls.Add(txtComplianceLegend, 0, 3);
+            layout.Controls.Add(toolbar, 0, 4);
+            layout.Controls.Add(dgvCompliancePlan, 0, 5);
+            layout.Controls.Add(signOffLayout, 0, 6);
             tabCompliance.Controls.Add(layout);
             tabControl1.Controls.Add(tabCompliance);
         }
@@ -847,6 +898,7 @@ namespace ExcelTrainingMonitor
             txtComplianceTerms.Clear();
             txtComplianceTitle.Clear();
             txtComplianceLegend.Clear();
+            dtpComplianceDateTime.Value = DateTime.Now;
             picComplianceLogo.Image?.Dispose();
             picComplianceLogo.Image = null;
             lblComplianceLogoPlaceholder.Visible = true;
@@ -876,6 +928,7 @@ namespace ExcelTrainingMonitor
             txtComplianceTerms.Clear();
             txtComplianceTitle.Text = Path.GetFileNameWithoutExtension(dialog.FileName);
             txtComplianceLegend.Clear();
+            dtpComplianceDateTime.Value = DateTime.Now;
             picComplianceLogo.Image?.Dispose();
             picComplianceLogo.Image = null;
             lblComplianceLogoPlaceholder.Visible = true;
@@ -904,6 +957,19 @@ namespace ExcelTrainingMonitor
 
             GridBookEditorService.SaveSheet(compliancePlanPath, "Compliance Plan", compliancePlanTable);
             NotificationManager.ShowNotification("Compliance Plan Saved", compliancePlanPath);
+        }
+
+        private void btnCompliancePrint_Click(object sender, EventArgs e)
+        {
+            dgvCompliancePlan.EndEdit();
+            CompliancePlanPrintService.Print(
+                this,
+                txtComplianceTerms.Text,
+                txtComplianceTitle.Text,
+                dtpComplianceDateTime.Value,
+                txtComplianceLegend.Text,
+                compliancePlanTable,
+                picComplianceLogo.Image);
         }
 
         private void btnComplianceAddRow_Click(object sender, EventArgs e)
