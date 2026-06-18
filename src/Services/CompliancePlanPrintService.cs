@@ -9,6 +9,17 @@ namespace ExcelTrainingMonitor.Services
 {
     internal static class CompliancePlanPrintService
     {
+        public static void PrintProcessRecord(
+            IWin32Window owner,
+            string version,
+            string title,
+            DateTime processDateTime,
+            DataTable table,
+            Image logo)
+        {
+            Print(owner, version, title, processDateTime, "", "", table, logo);
+        }
+
         public static void Print(
             IWin32Window owner,
             string technicalTerms,
@@ -46,14 +57,7 @@ namespace ExcelTrainingMonitor.Services
                 e.HasMorePages = hasMorePages;
             };
 
-            using var dialog = new PrintDialog
-            {
-                Document = document,
-                UseEXDialog = true
-            };
-
-            if (dialog.ShowDialog(owner) == DialogResult.OK)
-                document.Print();
+            PrintDialogService.Print(owner, document);
         }
 
         private static void DrawPage(

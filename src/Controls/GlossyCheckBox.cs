@@ -7,8 +7,7 @@ namespace ExcelTrainingMonitor.Controls
 {
     internal sealed class GlossyCheckBox : CheckBox
     {
-        private bool hovering;
-        private bool pressing;
+        private readonly PointerInteractionState pointerState = new PointerInteractionState();
 
         public GlossyCheckBox()
         {
@@ -18,35 +17,7 @@ namespace ExcelTrainingMonitor.Controls
             ForeColor = Color.FromArgb(0, 255, 40);
             BackColor = Color.Transparent;
             UseVisualStyleBackColor = false;
-        }
-
-        protected override void OnMouseEnter(EventArgs e)
-        {
-            hovering = true;
-            Invalidate();
-            base.OnMouseEnter(e);
-        }
-
-        protected override void OnMouseLeave(EventArgs e)
-        {
-            hovering = false;
-            pressing = false;
-            Invalidate();
-            base.OnMouseLeave(e);
-        }
-
-        protected override void OnMouseDown(MouseEventArgs mevent)
-        {
-            pressing = true;
-            Invalidate();
-            base.OnMouseDown(mevent);
-        }
-
-        protected override void OnMouseUp(MouseEventArgs mevent)
-        {
-            pressing = false;
-            Invalidate();
-            base.OnMouseUp(mevent);
+            pointerState.Attach(this);
         }
 
         protected override void OnCheckedChanged(EventArgs e)
@@ -66,9 +37,9 @@ namespace ExcelTrainingMonitor.Controls
             var inner = Rectangle.Inflate(box, -2, -2);
             var gloss = new Rectangle(inner.X, inner.Y, inner.Width, Math.Max(5, inner.Height / 2));
 
-            Color top = pressing
+            Color top = pointerState.Pressing
                 ? Color.FromArgb(18, 50, 8)
-                : hovering ? Color.FromArgb(28, 96, 14) : Color.FromArgb(12, 62, 12);
+                : pointerState.Hovering ? Color.FromArgb(28, 96, 14) : Color.FromArgb(12, 62, 12);
             Color bottom = Checked
                 ? Color.FromArgb(0, 150, 30)
                 : Color.FromArgb(0, 28, 8);
@@ -79,7 +50,7 @@ namespace ExcelTrainingMonitor.Controls
                 Color.FromArgb(145, 255, 236, 125),
                 Color.FromArgb(20, 255, 190, 20),
                 LinearGradientMode.Vertical);
-            using var borderPen = new Pen(hovering ? Color.FromArgb(255, 215, 35) : Color.FromArgb(0, 255, 40));
+            using var borderPen = new Pen(pointerState.Hovering ? Color.FromArgb(255, 215, 35) : Color.FromArgb(0, 255, 40));
             using var shadowPen = new Pen(Color.Black);
 
             g.FillRectangle(bodyBrush, inner);

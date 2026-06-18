@@ -7,8 +7,7 @@ namespace ExcelTrainingMonitor.Controls
 {
     internal sealed class GlossyButton : Button
     {
-        private bool hovering;
-        private bool pressing;
+        private readonly PointerInteractionState pointerState = new PointerInteractionState();
 
         public GlossyButton()
         {
@@ -18,35 +17,7 @@ namespace ExcelTrainingMonitor.Controls
             DoubleBuffered = true;
             ForeColor = Color.FromArgb(0, 255, 40);
             BackColor = Color.FromArgb(3, 45, 13);
-        }
-
-        protected override void OnMouseEnter(EventArgs e)
-        {
-            hovering = true;
-            Invalidate();
-            base.OnMouseEnter(e);
-        }
-
-        protected override void OnMouseLeave(EventArgs e)
-        {
-            hovering = false;
-            pressing = false;
-            Invalidate();
-            base.OnMouseLeave(e);
-        }
-
-        protected override void OnMouseDown(MouseEventArgs mevent)
-        {
-            pressing = true;
-            Invalidate();
-            base.OnMouseDown(mevent);
-        }
-
-        protected override void OnMouseUp(MouseEventArgs mevent)
-        {
-            pressing = false;
-            Invalidate();
-            base.OnMouseUp(mevent);
+            pointerState.Attach(this);
         }
 
         protected override void OnPaint(PaintEventArgs pevent)
@@ -58,12 +29,12 @@ namespace ExcelTrainingMonitor.Controls
             Rectangle inner = new Rectangle(1, 1, Width - 3, Height - 3);
             Rectangle gloss = new Rectangle(2, 2, Width - 5, Math.Max(8, Height / 2));
 
-            Color top = pressing
+            Color top = pointerState.Pressing
                 ? Color.FromArgb(1, 40, 10)
-                : hovering ? Color.FromArgb(7, 92, 24) : Color.FromArgb(4, 62, 16);
-            Color bottom = pressing
+                : pointerState.Hovering ? Color.FromArgb(7, 92, 24) : Color.FromArgb(4, 62, 16);
+            Color bottom = pointerState.Pressing
                 ? Color.FromArgb(0, 95, 20)
-                : hovering ? Color.FromArgb(0, 145, 30) : Color.FromArgb(0, 112, 24);
+                : pointerState.Hovering ? Color.FromArgb(0, 145, 30) : Color.FromArgb(0, 112, 24);
 
             using var bodyBrush = new LinearGradientBrush(inner, top, bottom, LinearGradientMode.Vertical);
             using var glossBrush = new LinearGradientBrush(

@@ -17,15 +17,17 @@ namespace ExcelTrainingMonitor.Services
             if (!settings.NtfyEnabled || string.IsNullOrWhiteSpace(settings.NtfyTopic))
                 return;
 
-            List<TrainingAlert> openAlerts = alerts
+            List<TrainingAlert> allOpenAlerts = alerts
                 .Where(x => x.Status == "Not Trained" || x.Status == "In Training")
                 .OrderBy(x => x.EmployeeName)
                 .ThenBy(x => x.Category)
+                .ToList();
+            List<TrainingAlert> openAlerts = allOpenAlerts
                 .Take(12)
                 .ToList();
 
             var message = new StringBuilder();
-            message.AppendLine($"{openAlerts.Count} open training item(s)");
+            message.AppendLine($"{allOpenAlerts.Count} open training item(s)");
 
             foreach (TrainingAlert alert in openAlerts)
             {

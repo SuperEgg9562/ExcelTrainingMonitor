@@ -40,7 +40,8 @@ namespace ExcelTrainingMonitor.Services
                 return null;
 
             using var stream = File.OpenRead(path);
-            return Image.FromStream(stream);
+            using var source = Image.FromStream(stream);
+            return new Bitmap(source);
         }
 
         public static void Apply(Form form, AppTheme theme)

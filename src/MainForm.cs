@@ -29,6 +29,7 @@ namespace ExcelTrainingMonitor
         private BindingList<TrainingAlert> currentAlertBinding = new BindingList<TrainingAlert>();
         private DataGridView dgvGridBook;
         private DataGridView dgvCompliancePlan;
+        private DataGridView dgvProcessRecord;
         private TextBox txtComplianceTerms;
         private TextBox txtComplianceTitle;
         private TextBox txtComplianceLegend;
@@ -37,13 +38,21 @@ namespace ExcelTrainingMonitor
         private DateTimePicker dtpComplianceTime;
         private PictureBox picComplianceLogo;
         private Label lblComplianceLogoPlaceholder;
+        private TextBox txtProcessRecordVersion;
+        private TextBox txtProcessRecordTitle;
+        private DateTimePicker dtpProcessRecordDateTime;
+        private DateTimePicker dtpProcessRecordTime;
+        private PictureBox picProcessRecordLogo;
+        private Label lblProcessRecordLogoPlaceholder;
         private GlossyComboBox cboGridBookSheets;
         private GlossyComboBox cboMinimizeBehavior;
         private GlossyCheckBox chkReminderAgentOnClose;
         private DataTable currentGridBookTable = new DataTable();
         private DataTable compliancePlanTable = new DataTable();
+        private DataTable processRecordTable = new DataTable();
         private string currentGridBookSheet = "Sheet1";
         private string compliancePlanPath = "";
+        private string processRecordPath = "";
 
         [SupportedOSPlatform("windows")]
         [DllImport("user32.dll")]
@@ -62,6 +71,7 @@ namespace ExcelTrainingMonitor
             InitializeComponent();
             CreateGridBookEditorTab();
             CreateCompliancePlanTab();
+            CreateProcessRecordTab();
             CreateBehaviorControls();
             CreateChartExportControls();
             ApplyFocusedTabLayout();
@@ -876,81 +886,291 @@ namespace ExcelTrainingMonitor
             tabControl1.Controls.Add(tabCompliance);
         }
 
-        private void ResizeComplianceHeaderTextBox(TextBox textBox, int minimumHeight, int maximumHeight)
+        private void CreateProcessRecordTab()
         {
-            if (textBox.ClientSize.Width <= 20)
-                return;
-
-            Size measured = TextRenderer.MeasureText(
-                string.IsNullOrEmpty(textBox.Text) ? " " : textBox.Text + " ",
-                textBox.Font,
-                new Size(textBox.ClientSize.Width - 12, int.MaxValue),
-                TextFormatFlags.TextBoxControl | TextFormatFlags.WordBreak);
-            int desiredHeight = measured.Height + 14;
-            textBox.Height = Math.Clamp(desiredHeight, minimumHeight, maximumHeight);
-            textBox.ScrollBars = desiredHeight > maximumHeight ? ScrollBars.Vertical : ScrollBars.None;
-        }
-
-        private void ResizeComplianceDateTimePicker()
-        {
-            if (dtpComplianceDateTime == null || dtpComplianceTime == null)
-                return;
-
-            string displayedDate = dtpComplianceDateTime.Value.ToString("dddd, dd MMMM yyyy");
-            int dateWidth = TextRenderer.MeasureText(displayedDate, dtpComplianceDateTime.Font).Width;
-            dtpComplianceDateTime.Width = dateWidth + SystemInformation.VerticalScrollBarWidth + 28;
-
-            string displayedTime = dtpComplianceTime.Value.ToString("HH:mm");
-            int timeWidth = TextRenderer.MeasureText(displayedTime, dtpComplianceTime.Font).Width;
-            dtpComplianceTime.Width = timeWidth + 34;
-        }
-
-        private void ComplianceLogo_Click(object sender, EventArgs e)
-        {
-            using var dialog = new OpenFileDialog
+            var tabProcessRecord = new TabPage
             {
-                Filter = "Image Files|*.png;*.jpg;*.jpeg;*.bmp;*.gif"
+                Name = "tabProcessRecord",
+                Text = "Process Record",
+                Padding = new Padding(3)
+            };
+            var layout = new TableLayoutPanel
+            {
+                Dock = DockStyle.Fill,
+                ColumnCount = 1,
+                RowCount = 7,
+                Margin = new Padding(0)
             };
 
-            if (dialog.ShowDialog(this) != DialogResult.OK)
-                return;
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
-            using var source = Image.FromFile(dialog.FileName);
-            Image logo = new Bitmap(source);
-            picComplianceLogo.Image?.Dispose();
-            picComplianceLogo.Image = logo;
-            lblComplianceLogoPlaceholder.Visible = false;
+            txtProcessRecordVersion = new TextBox
+            {
+                AcceptsReturn = true,
+                AutoSize = false,
+                Dock = DockStyle.Fill,
+                Height = 46,
+                Margin = new Padding(0, 0, 0, 6),
+                Multiline = true,
+                PlaceholderText = "Version",
+                WordWrap = true
+            };
+            txtProcessRecordVersion.TextChanged += (s, e) => ResizeComplianceHeaderTextBox(txtProcessRecordVersion, 46, 180);
+            txtProcessRecordVersion.SizeChanged += (s, e) => ResizeComplianceHeaderTextBox(txtProcessRecordVersion, 46, 180);
+
+
+            var titleLayout = new TableLayoutPanel
+            {
+                AutoSize = true,
+                ColumnCount = 2,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 0, 0, 6),
+                RowCount = 1
+            };
+            titleLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            titleLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 124F));
+
+            txtProcessRecordTitle = new TextBox
+            {
+                AcceptsReturn = true,
+                AutoSize = false,
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 14F, FontStyle.Bold),
+                Height = 72,
+                Margin = new Padding(0, 0, 6, 0),
+                Multiline = true,
+                PlaceholderText = "Process record title",
+                TextAlign = HorizontalAlignment.Center,
+                WordWrap = true
+            };
+            txtProcessRecordTitle.TextChanged += (s, e) => ResizeComplianceHeaderTextBox(txtProcessRecordTitle, 72, 140);
+            txtProcessRecordTitle.SizeChanged += (s, e) => ResizeComplianceHeaderTextBox(txtProcessRecordTitle, 72, 140);
+
+            var logoPanel = new Panel
+            {
+                BorderStyle = BorderStyle.FixedSingle,
+                Cursor = Cursors.Hand,
+                Dock = DockStyle.Fill,
+                Height = 72,
+                Margin = new Padding(0),
+                MinimumSize = new Size(118, 72)
+            };
+            picProcessRecordLogo = new PictureBox
+            {
+                Cursor = Cursors.Hand,
+                Dock = DockStyle.Fill,
+                SizeMode = PictureBoxSizeMode.Zoom
+            };
+            lblProcessRecordLogoPlaceholder = new Label
+            {
+                Cursor = Cursors.Hand,
+                Dock = DockStyle.Fill,
+                Text = "Click to add logo",
+                TextAlign = ContentAlignment.MiddleCenter
+            };
+            logoPanel.Click += ProcessRecordLogo_Click;
+            picProcessRecordLogo.Click += ProcessRecordLogo_Click;
+            lblProcessRecordLogoPlaceholder.Click += ProcessRecordLogo_Click;
+            logoPanel.Controls.Add(picProcessRecordLogo);
+            logoPanel.Controls.Add(lblProcessRecordLogoPlaceholder);
+            lblProcessRecordLogoPlaceholder.BringToFront();
+
+            titleLayout.Controls.Add(txtProcessRecordTitle, 0, 0);
+            titleLayout.Controls.Add(logoPanel, 1, 0);
+
+            var dateTimeLayout = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 0, 0, 6),
+                WrapContents = false
+            };
+            dateTimeLayout.Controls.Add(new Label
+            {
+                AutoSize = true,
+                Margin = new Padding(0, 7, 8, 0),
+                Text = "Processing Date / Time:"
+            });
+            dtpProcessRecordDateTime = new DateTimePicker
+            {
+                CustomFormat = "dddd, dd MMMM yyyy",
+                Format = DateTimePickerFormat.Custom,
+                Margin = new Padding(0),
+                Width = 240
+            };
+            dtpProcessRecordDateTime.ValueChanged += (s, e) => ResizeProcessRecordDateTimePicker();
+            dtpProcessRecordDateTime.FontChanged += (s, e) => ResizeProcessRecordDateTimePicker();
+            dateTimeLayout.Controls.Add(dtpProcessRecordDateTime);
+            dateTimeLayout.Controls.Add(new Label
+            {
+                AutoSize = true,
+                Margin = new Padding(14, 7, 8, 0),
+                Text = "Time:"
+            });
+            dtpProcessRecordTime = new DateTimePicker
+            {
+                CustomFormat = "HH:mm",
+                Format = DateTimePickerFormat.Custom,
+                Margin = new Padding(0),
+                ShowUpDown = true,
+                Width = 82
+            };
+            dtpProcessRecordTime.ValueChanged += (s, e) => ResizeProcessRecordDateTimePicker();
+            dtpProcessRecordTime.FontChanged += (s, e) => ResizeProcessRecordDateTimePicker();
+            dateTimeLayout.Controls.Add(dtpProcessRecordTime);
+            ResizeProcessRecordDateTimePicker();
+
+            var supplierNameFarmLayout = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 0, 0, 8),
+                WrapContents = true
+            };
+            supplierNameFarmLayout.Controls.Add(new Label
+            {
+                AutoSize = true,
+                Font = new Font("Segoe UI", 10F),
+                Margin = new Padding(0, 0, 36, 0),
+                Text = "Supplier / Farm Name: __________"
+            });
+            supplierNameFarmLayout.Controls.Add(new Label
+            {
+                AutoSize = true,
+                Font = new Font("Segoe UI", 10F),
+                Margin = new Padding(0),
+                Text = "NO Of Birds Killed / Processed: __________"
+            });
+            var toolbar = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 0, 0, 8),
+                WrapContents = true
+            };
+            toolbar.Controls.Add(CreateActionButton("New Plan", btnProcessRecordNew_Click, 96));
+            toolbar.Controls.Add(CreateActionButton("Open Plan", btnProcessRecordOpen_Click, 104));
+            toolbar.Controls.Add(CreateActionButton("Save Plan", btnProcessRecordSave_Click, 100));
+            toolbar.Controls.Add(CreateActionButton("Print Plan", btnProcessRecordPrint_Click, 100));
+            toolbar.Controls.Add(CreateActionButton("Add Row", btnProcessRecordAddRow_Click, 92));
+            toolbar.Controls.Add(CreateActionButton("Add Column", btnProcessRecordAddColumn_Click, 116));
+            toolbar.Controls.Add(CreateActionButton("Move Row Up", btnProcessRecordMoveRowUp_Click, 116));
+            toolbar.Controls.Add(CreateActionButton("Move Row Down", btnProcessRecordMoveRowDown_Click, 132));
+            toolbar.Controls.Add(CreateActionButton("Clear Cells", btnProcessRecordClearCells_Click, 104));
+            toolbar.Controls.Add(CreateActionButton("Delete Rows", btnProcessRecordDeleteRows_Click, 112));
+            toolbar.Controls.Add(CreateActionButton("Delete Columns", btnProcessRecordDeleteColumns_Click, 132));
+
+            var footerLayout = new TableLayoutPanel
+            {
+                AutoSize = true,
+                ColumnCount = 1,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 8, 0, 0),
+                Padding = new Padding(0, 4, 0, 4),
+                RowCount = 3
+            };
+            footerLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            footerLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            footerLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
+            var signOffLayout = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 0, 0, 8),
+                WrapContents = true
+            };
+            signOffLayout.Controls.Add(new Label
+            {
+                AutoSize = true,
+                Font = new Font("Segoe UI", 10F),
+                Margin = new Padding(0, 0, 36, 0),
+                Text = "Completed by: __________"
+            });
+            signOffLayout.Controls.Add(new Label
+            {
+                AutoSize = true,
+                Font = new Font("Segoe UI", 10F),
+                Margin = new Padding(0),
+                Text = "Signature: __________"
+            });
+            footerLayout.Controls.Add(signOffLayout, 0, 0);
+
+            dgvProcessRecord = new DataGridView
+            {
+                Dock = DockStyle.Fill,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None,
+                AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None,
+                AllowUserToAddRows = true,
+                AllowUserToDeleteRows = true,
+                RowHeadersWidth = 52,
+                ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize,
+                Name = "dgvProcessRecord"
+            };
+            dgvProcessRecord.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+            dgvProcessRecord.RowTemplate.MinimumHeight = 28;
+            dgvProcessRecord.CellEndEdit += DgvProcessRecord_CellEndEdit;
+            dgvProcessRecord.RowPostPaint += DgvProcessRecord_RowPostPaint;
+            ConfigureGrid(dgvProcessRecord);
+            dgvProcessRecord.ReadOnly = false;
+            dgvProcessRecord.RowHeadersVisible = true;
+            dgvProcessRecord.AllowUserToAddRows = true;
+            dgvProcessRecord.AllowUserToDeleteRows = true;
+            dgvProcessRecord.AllowUserToResizeColumns = true;
+            dgvProcessRecord.AllowUserToResizeRows = true;
+            dgvProcessRecord.MultiSelect = true;
+            dgvProcessRecord.SelectionMode = DataGridViewSelectionMode.CellSelect;
+
+            processRecordTable = GridBookEditorService.LoadSheet("", "", 10, 6);
+            dgvProcessRecord.DataSource = processRecordTable;
+            ResizeProcessRecordGrid();
+
+            layout.Controls.Add(txtProcessRecordVersion, 0, 0);
+            layout.Controls.Add(titleLayout, 0, 1);
+            layout.Controls.Add(dateTimeLayout, 0, 2);
+            layout.Controls.Add(supplierNameFarmLayout, 0, 3);
+            layout.Controls.Add(toolbar, 0, 4);
+            layout.Controls.Add(dgvProcessRecord, 0, 5);
+            layout.Controls.Add(footerLayout, 0, 6);
+            tabProcessRecord.Controls.Add(layout);
+            tabControl1.Controls.Add(tabProcessRecord);
+        }
+        private void ResizeComplianceHeaderTextBox(TextBox textBox, int minimumHeight, int maximumHeight)
+        {
+            DocumentEditorService.ResizeTextBox(textBox, minimumHeight, maximumHeight);
+        }
+        private void ResizeComplianceDateTimePicker()
+        {
+            DocumentEditorService.ResizeDateTimePickers(dtpComplianceDateTime, dtpComplianceTime);
         }
 
+        private void ResizeProcessRecordDateTimePicker()
+        {
+            DocumentEditorService.ResizeDateTimePickers(dtpProcessRecordDateTime, dtpProcessRecordTime);
+        }
+        private void ComplianceLogo_Click(object sender, EventArgs e)
+        {
+            DocumentEditorService.SelectLogo(this, picComplianceLogo, lblComplianceLogoPlaceholder);
+        }
+
+        private void ProcessRecordLogo_Click(object sender, EventArgs e)
+        {
+            DocumentEditorService.SelectLogo(this, picProcessRecordLogo, lblProcessRecordLogoPlaceholder);
+        }
         private void ResizeCompliancePlanGrid()
         {
-            if (dgvCompliancePlan.Columns.Count == 0)
-                return;
+            DocumentEditorService.ResizeGrid(dgvCompliancePlan);
+        }
 
-            dgvCompliancePlan.AutoResizeColumns(DataGridViewAutoSizeColumnsMode.AllCells);
-            int evenColumnWidth = dgvCompliancePlan.Columns
-                .Cast<DataGridViewColumn>()
-                .Max(column => column.Width);
-            evenColumnWidth = Math.Clamp(evenColumnWidth, 90, 320);
-
-            foreach (DataGridViewColumn column in dgvCompliancePlan.Columns)
-            {
-                column.MinimumWidth = 90;
-                column.AutoSizeMode = DataGridViewAutoSizeColumnMode.None;
-                column.Width = evenColumnWidth;
-            }
-
-            dgvCompliancePlan.AutoResizeRows(DataGridViewAutoSizeRowsMode.AllCells);
-            int evenRowHeight = dgvCompliancePlan.Rows
-                .Cast<DataGridViewRow>()
-                .Where(row => !row.IsNewRow)
-                .Select(row => row.Height)
-                .DefaultIfEmpty(28)
-                .Max();
-            evenRowHeight = Math.Clamp(evenRowHeight, 28, 160);
-
-            foreach (DataGridViewRow row in dgvCompliancePlan.Rows)
-                row.Height = evenRowHeight;
+        private void ResizeProcessRecordGrid()
+        {
+            DocumentEditorService.ResizeGrid(dgvProcessRecord);
         }
 
         private void DgvCompliancePlan_CellEndEdit(object sender, DataGridViewCellEventArgs e)
@@ -958,15 +1178,19 @@ namespace ExcelTrainingMonitor
             ResizeCompliancePlanGrid();
         }
 
+        private void DgvProcessRecord_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+        {
+            ResizeProcessRecordGrid();
+        }
+
         private void DgvCompliancePlan_RowPostPaint(object sender, DataGridViewRowPostPaintEventArgs e)
         {
-            TextRenderer.DrawText(
-                e.Graphics,
-                (e.RowIndex + 1).ToString(),
-                dgvCompliancePlan.Font,
-                new Rectangle(e.RowBounds.Left, e.RowBounds.Top, dgvCompliancePlan.RowHeadersWidth - 4, e.RowBounds.Height),
-                Color.FromArgb(0, 255, 40),
-                TextFormatFlags.Right | TextFormatFlags.VerticalCenter);
+            DocumentEditorService.DrawRowNumber(dgvCompliancePlan, e, Color.FromArgb(0, 255, 40));
+        }
+
+        private void DgvProcessRecord_RowPostPaint(object sender, DataGridViewRowPostPaintEventArgs e)
+        {
+            DocumentEditorService.DrawRowNumber(dgvProcessRecord, e, Color.FromArgb(0, 255, 40));
         }
 
         private void btnComplianceNew_Click(object sender, EventArgs e)
@@ -978,14 +1202,24 @@ namespace ExcelTrainingMonitor
             txtComplianceDetailIssues.Clear();
             dtpComplianceDateTime.Value = DateTime.Now;
             dtpComplianceTime.Value = DateTime.Now;
-            picComplianceLogo.Image?.Dispose();
-            picComplianceLogo.Image = null;
-            lblComplianceLogoPlaceholder.Visible = true;
+            DocumentEditorService.ResetLogo(picComplianceLogo, lblComplianceLogoPlaceholder);
             compliancePlanTable = GridBookEditorService.LoadSheet("", "", 10, 6);
             dgvCompliancePlan.DataSource = compliancePlanTable;
             ResizeCompliancePlanGrid();
         }
 
+        private void btnProcessRecordNew_Click(object sender, EventArgs e)
+        {
+            processRecordPath = "";
+            txtProcessRecordVersion.Clear();
+            txtProcessRecordTitle.Clear();
+            dtpProcessRecordDateTime.Value = DateTime.Now;
+            dtpProcessRecordTime.Value = DateTime.Now;
+            DocumentEditorService.ResetLogo(picProcessRecordLogo, lblProcessRecordLogoPlaceholder);
+            processRecordTable = GridBookEditorService.LoadSheet("", "", 10, 6);
+            dgvProcessRecord.DataSource = processRecordTable;
+            ResizeProcessRecordGrid();
+        }
         private void btnComplianceOpen_Click(object sender, EventArgs e)
         {
             using var dialog = new OpenFileDialog
@@ -1010,14 +1244,39 @@ namespace ExcelTrainingMonitor
             txtComplianceDetailIssues.Clear();
             dtpComplianceDateTime.Value = DateTime.Now;
             dtpComplianceTime.Value = DateTime.Now;
-            picComplianceLogo.Image?.Dispose();
-            picComplianceLogo.Image = null;
-            lblComplianceLogoPlaceholder.Visible = true;
+            DocumentEditorService.ResetLogo(picComplianceLogo, lblComplianceLogoPlaceholder);
             compliancePlanTable = GridBookEditorService.LoadSheet(compliancePlanPath, sheetName, 10, 6);
             dgvCompliancePlan.DataSource = compliancePlanTable;
             ResizeCompliancePlanGrid();
         }
 
+        private void btnProcessRecordOpen_Click(object sender, EventArgs e)
+        {
+            using var dialog = new OpenFileDialog
+            {
+                Filter = "Excel Files (*.xlsx)|*.xlsx"
+            };
+
+            if (dialog.ShowDialog(this) != DialogResult.OK)
+                return;
+
+            string[] sheets = GridBookEditorService.GetSheetNames(dialog.FileName);
+            if (sheets.Length == 0)
+                return;
+
+            string sheetName = sheets.FirstOrDefault(name =>
+                string.Equals(name, "Process Record", StringComparison.OrdinalIgnoreCase)) ?? sheets[0];
+
+            processRecordPath = dialog.FileName;
+            txtProcessRecordVersion.Clear();
+            txtProcessRecordTitle.Text = Path.GetFileNameWithoutExtension(dialog.FileName);
+            dtpProcessRecordDateTime.Value = DateTime.Now;
+            dtpProcessRecordTime.Value = DateTime.Now;
+            DocumentEditorService.ResetLogo(picProcessRecordLogo, lblProcessRecordLogoPlaceholder);
+            processRecordTable = GridBookEditorService.LoadSheet(processRecordPath, sheetName, 10, 6);
+            dgvProcessRecord.DataSource = processRecordTable;
+            ResizeProcessRecordGrid();
+        }
         private void btnComplianceSave_Click(object sender, EventArgs e)
         {
             dgvCompliancePlan.EndEdit();
@@ -1040,6 +1299,27 @@ namespace ExcelTrainingMonitor
             NotificationManager.ShowNotification("Compliance Plan Saved", compliancePlanPath);
         }
 
+        private void btnProcessRecordSave_Click(object sender, EventArgs e)
+        {
+            dgvProcessRecord.EndEdit();
+
+            if (string.IsNullOrWhiteSpace(processRecordPath))
+            {
+                using var dialog = new SaveFileDialog
+                {
+                    Filter = "Excel Files (*.xlsx)|*.xlsx",
+                    FileName = "ProcessRecord.xlsx"
+                };
+
+                if (dialog.ShowDialog(this) != DialogResult.OK)
+                    return;
+
+                processRecordPath = dialog.FileName;
+            }
+
+            GridBookEditorService.SaveSheet(processRecordPath, "Process Record", processRecordTable);
+            NotificationManager.ShowNotification("Process Record Saved", processRecordPath);
+        }
         private void btnCompliancePrint_Click(object sender, EventArgs e)
         {
             dgvCompliancePlan.EndEdit();
@@ -1053,25 +1333,36 @@ namespace ExcelTrainingMonitor
                 compliancePlanTable,
                 picComplianceLogo.Image);
         }
+        private void btnProcessRecordPrint_Click(object sender, EventArgs e)
+        {
+            dgvProcessRecord.EndEdit();
+            CompliancePlanPrintService.PrintProcessRecord(
+                this,
+                txtProcessRecordVersion.Text,
+                txtProcessRecordTitle.Text,
+                dtpProcessRecordDateTime.Value.Date + dtpProcessRecordTime.Value.TimeOfDay,
+                processRecordTable,
+                picProcessRecordLogo.Image);
+        }
 
         private void btnComplianceAddRow_Click(object sender, EventArgs e)
         {
-            compliancePlanTable.Rows.Add(compliancePlanTable.NewRow());
-            ResizeCompliancePlanGrid();
+            DocumentEditorService.AddRow(compliancePlanTable, dgvCompliancePlan);
         }
 
         private void btnComplianceAddColumn_Click(object sender, EventArgs e)
         {
-            int columnNumber = compliancePlanTable.Columns.Count;
-            string columnName;
-            do
-            {
-                columnName = GridBookEditorService.ColumnName(columnNumber++);
-            }
-            while (compliancePlanTable.Columns.Contains(columnName));
+            DocumentEditorService.AddColumn(compliancePlanTable, dgvCompliancePlan);
+        }
 
-            compliancePlanTable.Columns.Add(columnName);
-            ResizeCompliancePlanGrid();
+        private void btnProcessRecordAddRow_Click(object sender, EventArgs e)
+        {
+            DocumentEditorService.AddRow(processRecordTable, dgvProcessRecord);
+        }
+
+        private void btnProcessRecordAddColumn_Click(object sender, EventArgs e)
+        {
+            DocumentEditorService.AddColumn(processRecordTable, dgvProcessRecord);
         }
 
         private void btnComplianceMoveRowUp_Click(object sender, EventArgs e)
@@ -1086,106 +1377,52 @@ namespace ExcelTrainingMonitor
 
         private void MoveSelectedComplianceRows(int direction)
         {
-            dgvCompliancePlan.EndEdit();
-            var selectedRows = GetSelectedComplianceRowIndices();
-            if (selectedRows.Count == 0)
-                return;
-
-            int[] orderedRows = direction < 0
-                ? selectedRows.OrderBy(index => index).ToArray()
-                : selectedRows.OrderByDescending(index => index).ToArray();
-
-            foreach (int rowIndex in orderedRows)
-            {
-                int targetIndex = rowIndex + direction;
-                if (targetIndex < 0 || targetIndex >= compliancePlanTable.Rows.Count || selectedRows.Contains(targetIndex))
-                    continue;
-
-                object[] currentValues = compliancePlanTable.Rows[rowIndex].ItemArray;
-                compliancePlanTable.Rows[rowIndex].ItemArray = compliancePlanTable.Rows[targetIndex].ItemArray;
-                compliancePlanTable.Rows[targetIndex].ItemArray = currentValues;
-                selectedRows.Remove(rowIndex);
-                selectedRows.Add(targetIndex);
-            }
-
-            SelectComplianceRows(selectedRows);
-            ResizeCompliancePlanGrid();
+            DocumentEditorService.MoveSelectedRows(compliancePlanTable, dgvCompliancePlan, direction);
         }
 
-        private HashSet<int> GetSelectedComplianceRowIndices()
+        private void btnProcessRecordMoveRowUp_Click(object sender, EventArgs e)
         {
-            var indices = dgvCompliancePlan.SelectedRows
-                .Cast<DataGridViewRow>()
-                .Where(row => !row.IsNewRow)
-                .Select(row => row.Index)
-                .ToHashSet();
-
-            if (indices.Count == 0)
-            {
-                indices = dgvCompliancePlan.SelectedCells
-                    .Cast<DataGridViewCell>()
-                    .Where(cell => cell.RowIndex >= 0 && cell.RowIndex < compliancePlanTable.Rows.Count)
-                    .Select(cell => cell.RowIndex)
-                    .ToHashSet();
-            }
-
-            return indices;
+            MoveSelectedProcessRecordRows(-1);
         }
 
-        private void SelectComplianceRows(IEnumerable<int> rowIndices)
+        private void btnProcessRecordMoveRowDown_Click(object sender, EventArgs e)
         {
-            dgvCompliancePlan.ClearSelection();
-            foreach (int rowIndex in rowIndices.Where(index => index >= 0 && index < dgvCompliancePlan.Rows.Count))
-            {
-                foreach (DataGridViewCell cell in dgvCompliancePlan.Rows[rowIndex].Cells)
-                    cell.Selected = true;
-            }
+            MoveSelectedProcessRecordRows(1);
         }
 
+        private void MoveSelectedProcessRecordRows(int direction)
+        {
+            DocumentEditorService.MoveSelectedRows(processRecordTable, dgvProcessRecord, direction);
+        }
         private void btnComplianceClearCells_Click(object sender, EventArgs e)
         {
-            dgvCompliancePlan.EndEdit();
-            foreach (DataGridViewCell cell in dgvCompliancePlan.SelectedCells)
-            {
-                if (!cell.ReadOnly && cell.RowIndex >= 0 && !dgvCompliancePlan.Rows[cell.RowIndex].IsNewRow)
-                    cell.Value = "";
-            }
-
-            ResizeCompliancePlanGrid();
+            DocumentEditorService.ClearSelectedCells(dgvCompliancePlan);
         }
 
         private void btnComplianceDeleteRows_Click(object sender, EventArgs e)
         {
-            dgvCompliancePlan.EndEdit();
-            foreach (int rowIndex in GetSelectedComplianceRowIndices().OrderByDescending(index => index))
-            {
-                if (rowIndex >= 0 && rowIndex < compliancePlanTable.Rows.Count)
-                    compliancePlanTable.Rows.RemoveAt(rowIndex);
-            }
-
-            ResizeCompliancePlanGrid();
+            DocumentEditorService.DeleteSelectedRows(compliancePlanTable, dgvCompliancePlan);
         }
 
         private void btnComplianceDeleteColumns_Click(object sender, EventArgs e)
         {
-            dgvCompliancePlan.EndEdit();
-            var columnIndices = dgvCompliancePlan.SelectedCells
-                .Cast<DataGridViewCell>()
-                .Select(cell => cell.ColumnIndex)
-                .ToHashSet();
-
-            if (columnIndices.Count == 0 && dgvCompliancePlan.CurrentCell != null)
-                columnIndices.Add(dgvCompliancePlan.CurrentCell.ColumnIndex);
-
-            foreach (int columnIndex in columnIndices.OrderByDescending(index => index))
-            {
-                if (columnIndex >= 0 && columnIndex < compliancePlanTable.Columns.Count)
-                    compliancePlanTable.Columns.RemoveAt(columnIndex);
-            }
-
-            ResizeCompliancePlanGrid();
+            DocumentEditorService.DeleteSelectedColumns(compliancePlanTable, dgvCompliancePlan);
         }
 
+        private void btnProcessRecordClearCells_Click(object sender, EventArgs e)
+        {
+            DocumentEditorService.ClearSelectedCells(dgvProcessRecord);
+        }
+
+        private void btnProcessRecordDeleteRows_Click(object sender, EventArgs e)
+        {
+            DocumentEditorService.DeleteSelectedRows(processRecordTable, dgvProcessRecord);
+        }
+
+        private void btnProcessRecordDeleteColumns_Click(object sender, EventArgs e)
+        {
+            DocumentEditorService.DeleteSelectedColumns(processRecordTable, dgvProcessRecord);
+        }
         private void CreateBehaviorControls()
         {
             btnNewExcel.Visible = false;

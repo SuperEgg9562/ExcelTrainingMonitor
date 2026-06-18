@@ -1,5 +1,6 @@
 using ExcelTrainingMonitor.Models;
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -12,6 +13,7 @@ namespace ExcelTrainingMonitor.Services
     {
         private readonly NotifyIcon notifyIcon;
         private readonly System.Windows.Forms.Timer timer;
+        private bool isChecking;
 
         public ReminderAgentContext()
         {
@@ -46,35 +48,50 @@ namespace ExcelTrainingMonitor.Services
 
         private async Task CheckReminderAsync()
         {
-            AppSettings settings = SettingsManager.Load();
-            if (!settings.ReminderEnabled)
+            if (isChecking)
                 return;
 
-            DateTime reminderDate = settings.ReminderDateTime;
-            if (DateTime.Now < reminderDate || settings.LastAgentReminderSentFor == reminderDate)
-                return;
+            isChecking = true;
+            try
+            {
+                AppSettings settings = SettingsManager.Load();
+                if (!settings.ReminderEnabled)
+                    return;
 
-            var alerts = File.Exists(settings.ExcelPath)
-                ? ExcelMonitor.ScanFile(settings.ExcelPath)
-                : new System.Collections.Generic.List<TrainingAlert>();
+                DateTime reminderDate = settings.ReminderDateTime;
+                if (DateTime.Now < reminderDate || settings.LastAgentReminderSentFor == reminderDate)
+                    return;
 
-            var open = alerts
-                .Where(x => x.Status == "Not Trained" || x.Status == "In Training")
-                .Take(5)
-                .ToList();
+                var alerts = File.Exists(settings.ExcelPath)
+                    ? ExcelMonitor.ScanFile(settings.ExcelPath)
+                    : new System.Collections.Generic.List<TrainingAlert>();
 
-            string message = open.Count == 0
-                ? $"Reminder due: {reminderDate:yyyy-MM-dd HH:mm}"
-                : string.Join(Environment.NewLine, open.Select(x => $"{x.EmployeeName}: {x.Category} ({x.Status})"));
+                var open = alerts
+                    .Where(x => x.Status == "Not Trained" || x.Status == "In Training")
+                    .Take(5)
+                    .ToList();
 
-            notifyIcon.BalloonTipTitle = "Training Reminder";
-            notifyIcon.BalloonTipText = message.Length > 250 ? message[..250] : message;
-            notifyIcon.ShowBalloonTip(8000);
+                string message = open.Count == 0
+                    ? $"Reminder due: {reminderDate:yyyy-MM-dd HH:mm}"
+                    : string.Join(Environment.NewLine, open.Select(x => $"{x.EmployeeName}: {x.Category} ({x.Status})"));
 
-            await NtfyService.SendReminderAsync(settings, alerts);
+                notifyIcon.BalloonTipTitle = "Training Reminder";
+                notifyIcon.BalloonTipText = message.Length > 250 ? message[..250] : message;
+                notifyIcon.ShowBalloonTip(8000);
 
-            settings.LastAgentReminderSentFor = reminderDate;
-            SettingsManager.Save(settings);
+                settings.LastAgentReminderSentFor = reminderDate;
+                SettingsManager.Save(settings);
+
+                await NtfyService.SendReminderAsync(settings, alerts);
+            }
+            catch (Exception ex)
+            {
+                Trace.WriteLine($"Reminder agent check failed: {ex}");
+            }
+            finally
+            {
+                isChecking = false;
+            }
         }
     }
 }

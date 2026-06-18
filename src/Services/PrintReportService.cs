@@ -30,16 +30,7 @@ namespace ExcelTrainingMonitor.Services
                 e.HasMorePages = false;
             };
 
-            using var dialog = new PrintDialog
-            {
-                Document = document,
-                UseEXDialog = true
-            };
-
-            if (dialog.ShowDialog(owner) == DialogResult.OK)
-            {
-                document.Print();
-            }
+            PrintDialogService.Print(owner, document);
         }
 
         private static void DrawPage(

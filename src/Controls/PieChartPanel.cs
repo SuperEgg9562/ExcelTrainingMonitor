@@ -36,8 +36,9 @@ namespace ExcelTrainingMonitor.Controls
             using var titleBrush = new SolidBrush(Color.FromArgb(0, 255, 40));
             using var textBrush = new SolidBrush(Color.FromArgb(120, 255, 135));
             using var borderPen = new Pen(Color.FromArgb(0, 220, 35));
+            using var titleFont = new Font(Font, FontStyle.Bold);
 
-            e.Graphics.DrawString(ChartTitle, new Font(Font, FontStyle.Bold), titleBrush, 12, 12);
+            e.Graphics.DrawString(ChartTitle, titleFont, titleBrush, 12, 12);
             e.Graphics.DrawRectangle(borderPen, 0, 0, Width - 1, Height - 1);
 
             int total = segments.Sum(x => x.Value);
