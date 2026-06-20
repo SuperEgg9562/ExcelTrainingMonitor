@@ -54,7 +54,12 @@ namespace ExcelTrainingMonitor.Services
 
         public static void ApplyAssignments(DataGridView grid, ProcessRecordMetadata metadata)
         {
-            foreach (var assignment in metadata.CellDropdownAssignments.ToArray())
+            ApplyAssignments(grid, metadata, metadata.CellDropdownAssignments);
+        }
+
+        public static void ApplyAssignments(DataGridView grid, ProcessRecordMetadata metadata, IReadOnlyDictionary<string, string> assignments)
+        {
+            foreach (var assignment in assignments.ToArray())
             {
                 if (!TryParseCellKey(assignment.Key, out int rowIndex, out int columnIndex) ||
                     rowIndex < 0 || rowIndex >= grid.Rows.Count ||

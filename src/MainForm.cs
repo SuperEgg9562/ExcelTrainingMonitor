@@ -908,7 +908,7 @@ namespace ExcelTrainingMonitor
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 9,
+                RowCount = 10,
                 Margin = new Padding(0)
             };
 
@@ -918,6 +918,7 @@ namespace ExcelTrainingMonitor
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -1195,6 +1196,7 @@ namespace ExcelTrainingMonitor
             dgvDailyProduction.RowTemplate.MinimumHeight = 28;
             dgvDailyProduction.CellEndEdit += DgvDailyProduction_CellEndEdit;
             dgvDailyProduction.RowPostPaint += DgvDailyProduction_RowPostPaint;
+            dgvDailyProduction.Enter += ProcessGrid_Enter;
             ConfigureGrid(dgvDailyProduction);
             dgvDailyProduction.ReadOnly = false;
             dgvDailyProduction.RowHeadersVisible = true;
@@ -1224,6 +1226,7 @@ namespace ExcelTrainingMonitor
             dgvProcessRecord.RowTemplate.MinimumHeight = 28;
             dgvProcessRecord.CellEndEdit += DgvProcessRecord_CellEndEdit;
             dgvProcessRecord.RowPostPaint += DgvProcessRecord_RowPostPaint;
+            dgvProcessRecord.Enter += ProcessGrid_Enter;
             ConfigureGrid(dgvProcessRecord);
             dgvProcessRecord.ReadOnly = false;
             dgvProcessRecord.RowHeadersVisible = true;
@@ -1236,7 +1239,17 @@ namespace ExcelTrainingMonitor
 
             processRecordTable = GridBookEditorService.LoadSheet("", "", 10, 6);
             dgvProcessRecord.DataSource = processRecordTable;
+            activeProcessGrid = dgvProcessRecord;
             ResizeProcessRecordGrid();
+
+            var dailyProductionLabel = new Label
+            {
+                AutoSize = true,
+                Dock = DockStyle.Fill,
+                Font = new Font("Segoe UI", 12F, FontStyle.Bold),
+                Margin = new Padding(0, 8, 0, 4),
+                Text = "Daily Production"
+            };
 
             layout.Controls.Add(txtProcessRecordVersion, 0, 0);
             layout.Controls.Add(titleLayout, 0, 1);
@@ -1245,8 +1258,9 @@ namespace ExcelTrainingMonitor
             layout.Controls.Add(toolbar, 0, 4);
             layout.Controls.Add(dgvProcessRecord, 0, 5);
             layout.Controls.Add(middleProcessRecordPanel, 0, 6);
-            layout.Controls.Add(dgvDailyProduction, 0, 7);
-            layout.Controls.Add(footerLayout, 0, 8);
+            layout.Controls.Add(dailyProductionLabel, 0, 7);
+            layout.Controls.Add(dgvDailyProduction, 0, 8);
+            layout.Controls.Add(footerLayout, 0, 9);
             tabProcessRecord.Controls.Add(layout);
             tabControl1.Controls.Add(tabProcessRecord);
         }
@@ -1296,7 +1310,24 @@ namespace ExcelTrainingMonitor
         }
         private void DgvDailyProduction_CellEndEdit(object sender, DataGridViewCellEventArgs e)
         {
-            ResizeProcessRecordGrid();
+            ResizeDailyProductionGrid();
+        }
+
+        private void ProcessGrid_Enter(object sender, EventArgs e)
+        {
+            if (sender is DataGridView grid)
+                activeProcessGrid = grid;
+        }
+
+        private DataGridView ActiveProcessGrid => activeProcessGrid == dgvDailyProduction ? dgvDailyProduction : dgvProcessRecord;
+        private DataTable ActiveProcessTable => ActiveProcessGrid == dgvDailyProduction ? dailyProductionTable : processRecordTable;
+
+        private void ResizeActiveProcessGrid()
+        {
+            if (ActiveProcessGrid == dgvDailyProduction)
+                ResizeDailyProductionGrid();
+            else
+                ResizeProcessRecordGrid();
         }
         private void DgvCompliancePlan_RowPostPaint(object sender, DataGridViewRowPostPaintEventArgs e)
         {
@@ -1430,6 +1461,7 @@ namespace ExcelTrainingMonitor
 
             processRecordMetadata.DropdownLists[listName] = items;
             ProcessRecordGridService.UpdateListCells(dgvProcessRecord, listName, items);
+            ProcessRecordGridService.UpdateListCells(dgvDailyProduction, listName, items);
             RefreshProcessDropdownLists(listName);
         }
 
@@ -1443,18 +1475,18 @@ namespace ExcelTrainingMonitor
                 return;
             }
 
-            if (dgvProcessRecord.SelectedCells.Count == 0)
+            if (ActiveProcessGrid.SelectedCells.Count == 0)
             {
                 MessageBox.Show(this, "Select one or more grid cells first.", "Apply Dropdown", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            ProcessRecordGridService.AssignSelectedCells(dgvProcessRecord, listName, items);
+            ProcessRecordGridService.AssignSelectedCells(ActiveProcessGrid, listName, items);
         }
 
         private void btnProcessRemoveDropdown_Click(object sender, EventArgs e)
         {
-            ProcessRecordGridService.RemoveDropdownsFromSelectedCells(dgvProcessRecord);
+            ProcessRecordGridService.RemoveDropdownsFromSelectedCells(ActiveProcessGrid);
         }
 
         private void btnProcessDeleteDropdownList_Click(object sender, EventArgs e)
@@ -1474,6 +1506,7 @@ namespace ExcelTrainingMonitor
             }
 
             ProcessRecordGridService.RemoveListCells(dgvProcessRecord, listName);
+            ProcessRecordGridService.RemoveListCells(dgvDailyProduction, listName);
             processRecordMetadata.DropdownLists.Remove(listName);
             RefreshProcessDropdownLists();
         }
@@ -1490,9 +1523,13 @@ namespace ExcelTrainingMonitor
             DocumentEditorService.ResetLogo(picProcessRecordLogo, lblProcessRecordLogoPlaceholder);
             processRecordTable = GridBookEditorService.LoadSheet("", "", 10, 6);
             dgvProcessRecord.DataSource = processRecordTable;
+            dailyProductionTable = GridBookEditorService.LoadSheet("", "", 10, 6);
+            dgvDailyProduction.DataSource = dailyProductionTable;
+            activeProcessGrid = dgvProcessRecord;
             RefreshProcessSupplierChoices();
             RefreshProcessDropdownLists();
             ResizeProcessRecordGrid();
+            ResizeDailyProductionGrid();
         }
         private void btnComplianceOpen_Click(object sender, EventArgs e)
         {
@@ -1554,10 +1591,15 @@ namespace ExcelTrainingMonitor
             DocumentEditorService.ResetLogo(picProcessRecordLogo, lblProcessRecordLogoPlaceholder);
             processRecordTable = GridBookEditorService.LoadSheet(processRecordPath, sheetName, 10, 6);
             dgvProcessRecord.DataSource = processRecordTable;
+            dailyProductionTable = GridBookEditorService.LoadSheet(processRecordPath, sheets.FirstOrDefault(name => string.Equals(name, "Daily Production", StringComparison.OrdinalIgnoreCase)) ?? "", 10, 6);
+            dgvDailyProduction.DataSource = dailyProductionTable;
+            activeProcessGrid = dgvProcessRecord;
             RefreshProcessSupplierChoices();
             RefreshProcessDropdownLists();
             ProcessRecordGridService.ApplyAssignments(dgvProcessRecord, processRecordMetadata);
+            ProcessRecordGridService.ApplyAssignments(dgvDailyProduction, processRecordMetadata, processRecordMetadata.DailyProductionCellDropdownAssignments);
             ResizeProcessRecordGrid();
+            ResizeDailyProductionGrid();
         }
         private void btnComplianceSave_Click(object sender, EventArgs e)
         {
@@ -1584,6 +1626,7 @@ namespace ExcelTrainingMonitor
         private void btnProcessRecordSave_Click(object sender, EventArgs e)
         {
             dgvProcessRecord.EndEdit();
+            dgvDailyProduction.EndEdit();
 
             if (string.IsNullOrWhiteSpace(processRecordPath))
             {
@@ -1603,7 +1646,9 @@ namespace ExcelTrainingMonitor
             processRecordMetadata.BirdsProcessed = (int)numProcessBirds.Value;
             processRecordMetadata.CellDropdownAssignments =
                 ProcessRecordGridService.CaptureAssignments(dgvProcessRecord);
+            processRecordMetadata.DailyProductionCellDropdownAssignments = ProcessRecordGridService.CaptureAssignments(dgvDailyProduction);
             GridBookEditorService.SaveSheet(processRecordPath, "Process Record", processRecordTable);
+            GridBookEditorService.SaveSheet(processRecordPath, "Daily Production", dailyProductionTable);
             ProcessRecordGridService.SaveMetadata(processRecordPath, processRecordMetadata);
             NotificationManager.ShowNotification("Process Record Saved", processRecordPath);
         }
@@ -1646,24 +1691,25 @@ namespace ExcelTrainingMonitor
 
         private void btnProcessRecordAddRow_Click(object sender, EventArgs e)
         {
-            DocumentEditorService.AddRow(processRecordTable, dgvProcessRecord);
+            DocumentEditorService.AddRow(ActiveProcessTable, ActiveProcessGrid);
         }
 
         private void btnProcessRecordAddColumn_Click(object sender, EventArgs e)
         {
-            DocumentEditorService.AddColumn(processRecordTable, dgvProcessRecord);
+            DocumentEditorService.AddColumn(ActiveProcessTable, ActiveProcessGrid);
         }
 
         private void btnProcessRecordRenameColumn_Click(object sender, EventArgs e)
         {
-            int columnIndex = dgvProcessRecord.CurrentCell?.ColumnIndex ?? -1;
-            if (columnIndex < 0 || columnIndex >= processRecordTable.Columns.Count)
+            DataTable table = ActiveProcessTable;
+            int columnIndex = ActiveProcessGrid.CurrentCell?.ColumnIndex ?? -1;
+            if (columnIndex < 0 || columnIndex >= table.Columns.Count)
             {
                 MessageBox.Show(this, "Select a grid column first.", "Rename Column", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            string currentName = processRecordTable.Columns[columnIndex].ColumnName;
+            string currentName = table.Columns[columnIndex].ColumnName;
             if (!TextPromptDialog.Show(this, "Rename Column", "Column name:", currentName, false, out string newName) ||
                 string.IsNullOrWhiteSpace(newName) ||
                 string.Equals(currentName, newName, StringComparison.OrdinalIgnoreCase))
@@ -1671,14 +1717,14 @@ namespace ExcelTrainingMonitor
                 return;
             }
 
-            if (processRecordTable.Columns.Contains(newName))
+            if (table.Columns.Contains(newName))
             {
                 MessageBox.Show(this, "That column name is already in use.", "Rename Column", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
-            processRecordTable.Columns[columnIndex].ColumnName = newName;
-            ResizeProcessRecordGrid();
+            table.Columns[columnIndex].ColumnName = newName;
+            ResizeActiveProcessGrid();
         }
 
         private void btnComplianceMoveRowUp_Click(object sender, EventArgs e)
@@ -1708,7 +1754,7 @@ namespace ExcelTrainingMonitor
 
         private void MoveSelectedProcessRecordRows(int direction)
         {
-            DocumentEditorService.MoveSelectedRows(processRecordTable, dgvProcessRecord, direction);
+            DocumentEditorService.MoveSelectedRows(ActiveProcessTable, ActiveProcessGrid, direction);
         }
         private void btnComplianceClearCells_Click(object sender, EventArgs e)
         {
@@ -1727,17 +1773,17 @@ namespace ExcelTrainingMonitor
 
         private void btnProcessRecordClearCells_Click(object sender, EventArgs e)
         {
-            DocumentEditorService.ClearSelectedCells(dgvProcessRecord);
+            DocumentEditorService.ClearSelectedCells(ActiveProcessGrid);
         }
 
         private void btnProcessRecordDeleteRows_Click(object sender, EventArgs e)
         {
-            DocumentEditorService.DeleteSelectedRows(processRecordTable, dgvProcessRecord);
+            DocumentEditorService.DeleteSelectedRows(ActiveProcessTable, ActiveProcessGrid);
         }
 
         private void btnProcessRecordDeleteColumns_Click(object sender, EventArgs e)
         {
-            DocumentEditorService.DeleteSelectedColumns(processRecordTable, dgvProcessRecord);
+            DocumentEditorService.DeleteSelectedColumns(ActiveProcessTable, ActiveProcessGrid);
         }
         private void CreateBehaviorControls()
         {

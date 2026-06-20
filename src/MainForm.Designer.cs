@@ -124,6 +124,10 @@ namespace ExcelTrainingMonitor
             themeLayout = new TableLayoutPanel();
             fileSearchLayout = new TableLayoutPanel();
             actionLayout = new FlowLayoutPanel();
+            btnNewExcel = new GlossyButton();
+            btnSaveExcel = new GlossyButton();
+            btnExportExcel = new GlossyButton();
+            chkMinimizeTray = new GlossyCheckBox();
             picAccentBar = new PictureBox();
             dashboardLayout = new FlowLayoutPanel();
             footerLayout = new TableLayoutPanel();
@@ -298,7 +302,7 @@ namespace ExcelTrainingMonitor
             // lblNtfyTopic
             // 
             lblNtfyTopic.AutoSize = true;
-            lblNtfyTopic.Location = new Point(0, 10);
+            lblNtfyTopic.Location = new Point(640, 10);
             lblNtfyTopic.Margin = new Padding(0, 10, 6, 0);
             lblNtfyTopic.Name = "lblNtfyTopic";
             lblNtfyTopic.Size = new Size(63, 18);
@@ -308,7 +312,7 @@ namespace ExcelTrainingMonitor
             // lblNtfyEmail
             // 
             lblNtfyEmail.AutoSize = true;
-            lblNtfyEmail.Location = new Point(334, 10);
+            lblNtfyEmail.Location = new Point(974, 10);
             lblNtfyEmail.Margin = new Padding(0, 10, 6, 0);
             lblNtfyEmail.Name = "lblNtfyEmail";
             lblNtfyEmail.Size = new Size(63, 18);
@@ -317,7 +321,7 @@ namespace ExcelTrainingMonitor
             // 
             // txtNtfyTopic
             // 
-            txtNtfyTopic.Location = new Point(69, 5);
+            txtNtfyTopic.Location = new Point(709, 5);
             txtNtfyTopic.Margin = new Padding(0, 5, 16, 7);
             txtNtfyTopic.Name = "txtNtfyTopic";
             txtNtfyTopic.Size = new Size(249, 31);
@@ -325,7 +329,7 @@ namespace ExcelTrainingMonitor
             // 
             // txtNtfyEmail
             // 
-            txtNtfyEmail.Location = new Point(403, 5);
+            txtNtfyEmail.Location = new Point(1043, 5);
             txtNtfyEmail.Margin = new Padding(0, 5, 16, 7);
             txtNtfyEmail.Name = "txtNtfyEmail";
             txtNtfyEmail.Size = new Size(296, 31);
@@ -659,6 +663,10 @@ namespace ExcelTrainingMonitor
             // actionLayout
             // 
             actionLayout.AutoSize = true;
+            actionLayout.Controls.Add(btnNewExcel);
+            actionLayout.Controls.Add(btnSaveExcel);
+            actionLayout.Controls.Add(btnExportExcel);
+            actionLayout.Controls.Add(chkMinimizeTray);
             actionLayout.Controls.Add(lblNtfyTopic);
             actionLayout.Controls.Add(txtNtfyTopic);
             actionLayout.Controls.Add(lblNtfyEmail);
@@ -669,6 +677,68 @@ namespace ExcelTrainingMonitor
             actionLayout.Name = "actionLayout";
             actionLayout.Size = new Size(1904, 43);
             actionLayout.TabIndex = 3;
+            // 
+            // btnNewExcel
+            // 
+            btnNewExcel.AutoSize = true;
+            btnNewExcel.BackColor = Color.FromArgb(3, 45, 13);
+            btnNewExcel.FlatStyle = FlatStyle.Flat;
+            btnNewExcel.ForeColor = Color.FromArgb(0, 255, 40);
+            btnNewExcel.Location = new Point(0, 0);
+            btnNewExcel.Margin = new Padding(0, 0, 8, 6);
+            btnNewExcel.MinimumSize = new Size(96, 34);
+            btnNewExcel.Name = "btnNewExcel";
+            btnNewExcel.Size = new Size(119, 34);
+            btnNewExcel.TabIndex = 0;
+            btnNewExcel.Text = "New Excel";
+            btnNewExcel.UseVisualStyleBackColor = false;
+            btnNewExcel.Click += btnNewExcel_Click;
+            // 
+            // btnSaveExcel
+            // 
+            btnSaveExcel.AutoSize = true;
+            btnSaveExcel.BackColor = Color.FromArgb(3, 45, 13);
+            btnSaveExcel.FlatStyle = FlatStyle.Flat;
+            btnSaveExcel.ForeColor = Color.FromArgb(0, 255, 40);
+            btnSaveExcel.Location = new Point(127, 0);
+            btnSaveExcel.Margin = new Padding(0, 0, 8, 6);
+            btnSaveExcel.MinimumSize = new Size(96, 34);
+            btnSaveExcel.Name = "btnSaveExcel";
+            btnSaveExcel.Size = new Size(130, 34);
+            btnSaveExcel.TabIndex = 1;
+            btnSaveExcel.Text = "Save Excel";
+            btnSaveExcel.UseVisualStyleBackColor = false;
+            btnSaveExcel.Click += btnSaveExcel_Click;
+            // 
+            // btnExportExcel
+            // 
+            btnExportExcel.AutoSize = true;
+            btnExportExcel.BackColor = Color.FromArgb(3, 45, 13);
+            btnExportExcel.FlatStyle = FlatStyle.Flat;
+            btnExportExcel.ForeColor = Color.FromArgb(0, 255, 40);
+            btnExportExcel.Location = new Point(265, 0);
+            btnExportExcel.Margin = new Padding(0, 0, 8, 6);
+            btnExportExcel.MinimumSize = new Size(96, 34);
+            btnExportExcel.Name = "btnExportExcel";
+            btnExportExcel.Size = new Size(152, 34);
+            btnExportExcel.TabIndex = 2;
+            btnExportExcel.Text = "Export Excel";
+            btnExportExcel.UseVisualStyleBackColor = false;
+            btnExportExcel.Click += btnExportExcel_Click;
+            // 
+            // chkMinimizeTray
+            // 
+            chkMinimizeTray.AutoSize = true;
+            chkMinimizeTray.BackColor = Color.Transparent;
+            chkMinimizeTray.FlatStyle = FlatStyle.Flat;
+            chkMinimizeTray.ForeColor = Color.FromArgb(0, 255, 40);
+            chkMinimizeTray.Location = new Point(425, 6);
+            chkMinimizeTray.Margin = new Padding(0, 6, 10, 6);
+            chkMinimizeTray.Name = "chkMinimizeTray";
+            chkMinimizeTray.Size = new Size(205, 22);
+            chkMinimizeTray.TabIndex = 3;
+            chkMinimizeTray.Text = "Minimize to tray";
+            chkMinimizeTray.UseVisualStyleBackColor = false;
             // 
             // picAccentBar
             // 
