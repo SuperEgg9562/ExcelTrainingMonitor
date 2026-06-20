@@ -1109,7 +1109,7 @@ namespace ExcelTrainingMonitor
                 Margin = new Padding(0, 8, 0, 8)
             };
 
-            middleProcessRecordPanel.Controls.Add(new Label { Text = "Category:" });
+            middleProcessRecordPanel.Controls.Add(new Label { Text = "Inwards Number:" });
 
             var cboCategory = new ComboBox
             {
@@ -1119,7 +1119,7 @@ namespace ExcelTrainingMonitor
 
             middleProcessRecordPanel.Controls.Add(new Label
             {
-                Text = "Comments:",
+                Text = "QC Checked by:",
                 Margin = new Padding(20, 3, 5, 0)
             });
 
