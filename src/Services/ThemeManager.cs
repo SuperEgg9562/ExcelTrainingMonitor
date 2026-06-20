@@ -152,6 +152,8 @@ namespace ExcelTrainingMonitor.Services
                 grid.DefaultCellStyle.SelectionForeColor = Color.Black;
                 grid.BorderStyle = BorderStyle.FixedSingle;
                 grid.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
+                ApplyTrainingColors(grid);
+                grid.CellEndEdit += (_, __) => ApplyTrainingColors(grid);
             }
             else if (control is PictureBox pictureBox)
             {
@@ -166,6 +168,7 @@ namespace ExcelTrainingMonitor.Services
             {
                 ApplyControl(child, theme);
             }
+
         }
 
         private static void DrawThemedComboItem(object sender, DrawItemEventArgs e)
@@ -261,6 +264,44 @@ namespace ExcelTrainingMonitor.Services
             {
                 e.Graphics.DrawRectangle(borderPen, 0, 0, control.Width - 1, control.Height - 1);
             }
+        }
+        public static void ApplyTrainingColors(DataGridView dgvGridBook)
+        {
+            foreach (DataGridViewRow row in dgvGridBook.Rows)
+            {
+                foreach (DataGridViewCell cell in row.Cells)
+                {
+                    if (cell.Value == null)
+                        continue;
+
+                    string value = cell.Value.ToString()?.Trim();
+
+                    switch (value)
+                    {
+                        case "0":
+                            cell.Style.BackColor = Color.FromArgb(80, 15, 15);
+                            cell.Style.ForeColor = Color.FromArgb(255, 180, 180);
+                            break;
+
+                        case "1":
+                            cell.Style.BackColor = Color.FromArgb(90, 70, 0);
+                            cell.Style.ForeColor = Color.FromArgb(255, 230, 100);
+                            break;
+
+                        case "2":
+                            cell.Style.BackColor = Color.FromArgb(15, 80, 15);
+                            cell.Style.ForeColor = Color.FromArgb(120, 255, 135);
+                            break;
+
+                        default:
+                            cell.Style.BackColor = dgvGridBook.DefaultCellStyle.BackColor;
+                            cell.Style.ForeColor = dgvGridBook.DefaultCellStyle.ForeColor;
+                            break;
+                    }
+                }
+            }
+
+            dgvGridBook.Refresh();
         }
     }
 }

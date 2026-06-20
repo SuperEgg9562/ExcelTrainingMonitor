@@ -582,6 +582,7 @@ namespace ExcelTrainingMonitor
             GlossyButton btnEditorAddSheet = CreateActionButton("Add Sheet", btnEditorAddSheet_Click, 104);
             GlossyButton btnEditorAddRow = CreateActionButton("Add Row", btnEditorAddRow_Click, 92);
             GlossyButton btnEditorAddColumn = CreateActionButton("Add Column", btnEditorAddColumn_Click, 116);
+            GlossyButton btnEditorTrainingColors = CreateActionButton("Training Colors", btnEditorTrainingColors_Click, 132);
 
             cboGridBookSheets = new GlossyComboBox
             {
@@ -600,6 +601,7 @@ namespace ExcelTrainingMonitor
             toolbar.Controls.Add(btnEditorSave);
             toolbar.Controls.Add(btnEditorSaveAs);
             toolbar.Controls.Add(btnEditorExport);
+            toolbar.Controls.Add(btnEditorTrainingColors);
 
             dgvGridBook = new DataGridView
             {
@@ -1053,6 +1055,7 @@ namespace ExcelTrainingMonitor
             cboProcessSupplier = new GlossyComboBox
             {
                 Margin = new Padding(0, 0, 8, 0),
+                DropDownStyle = ComboBoxStyle.DropDown,
                 Width = 240
             };
             supplierNameFarmLayout.Controls.Add(cboProcessSupplier);
@@ -1120,6 +1123,7 @@ namespace ExcelTrainingMonitor
             var cboInwardsNumber = new GlossyComboBox
             {
                 Margin = new Padding(0, 0, 8, 0),
+                DropDownStyle = ComboBoxStyle.DropDown,
                 Width = 240
             };
             middleProcessRecordPanel.Controls.Add(cboInwardsNumber);
@@ -1135,6 +1139,7 @@ namespace ExcelTrainingMonitor
             var cboQualityControl = new GlossyComboBox
             {
                 Margin = new Padding(0, 0, 8, 0),
+                DropDownStyle = ComboBoxStyle.DropDown,
                 Width = 300
             };
             middleProcessRecordPanel.Controls.Add(cboQualityControl);
@@ -2013,6 +2018,10 @@ namespace ExcelTrainingMonitor
             currentGridBookTable.Columns.Add(name);
         }
 
+       private void btnEditorTrainingColors_Click(object sender, EventArgs e)
+        {
+            ThemeManager.ApplyTrainingColors(dgvGridBook);
+        }
         private void cboGridBookSheets_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (cboGridBookSheets.SelectedItem == null)

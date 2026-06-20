@@ -9,8 +9,8 @@
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <AssemblyVersion>1.0.27.27</AssemblyVersion>
-    <FileVersion>1.0.27.27</FileVersion>
+    <AssemblyVersion>1.0.31.31</AssemblyVersion>
+    <FileVersion>1.0.31.31</FileVersion>
     <Version>1.0.4</Version>
   </PropertyGroup>
 
