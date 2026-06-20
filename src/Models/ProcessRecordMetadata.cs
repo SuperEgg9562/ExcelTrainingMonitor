@@ -10,5 +10,7 @@ namespace ExcelTrainingMonitor.Models
             new Dictionary<string, List<string>>(System.StringComparer.OrdinalIgnoreCase);
         public Dictionary<string, string> CellDropdownAssignments { get; set; } =
             new Dictionary<string, string>();
+        public Dictionary<string, string> DailyProductionCellDropdownAssignments { get; set; } =
+            new Dictionary<string, string>();
     }
 }

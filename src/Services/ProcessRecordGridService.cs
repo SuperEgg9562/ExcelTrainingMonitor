@@ -31,6 +31,7 @@ namespace ExcelTrainingMonitor.Services
                     metadata.DropdownLists ?? new Dictionary<string, List<string>>(),
                     StringComparer.OrdinalIgnoreCase);
                 metadata.CellDropdownAssignments ??= new Dictionary<string, string>();
+                metadata.DailyProductionCellDropdownAssignments ??= new Dictionary<string, string>();
                 return metadata;
             }
             catch

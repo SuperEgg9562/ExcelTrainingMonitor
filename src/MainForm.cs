@@ -30,6 +30,7 @@ namespace ExcelTrainingMonitor
         private DataGridView dgvGridBook;
         private DataGridView dgvCompliancePlan;
         private DataGridView dgvProcessRecord;
+        private DataGridView dgvDailyProduction;
         private TextBox txtComplianceTerms;
         private TextBox txtComplianceTitle;
         private TextBox txtComplianceLegend;
@@ -53,7 +54,9 @@ namespace ExcelTrainingMonitor
         private DataTable currentGridBookTable = new DataTable();
         private DataTable compliancePlanTable = new DataTable();
         private DataTable processRecordTable = new DataTable();
+        private DataTable dailyProductionTable = new DataTable();
         private ProcessRecordMetadata processRecordMetadata = new ProcessRecordMetadata();
+        private DataGridView activeProcessGrid;
         private string currentGridBookSheet = "Sheet1";
         private string compliancePlanPath = "";
         private string processRecordPath = "";
@@ -903,7 +906,7 @@ namespace ExcelTrainingMonitor
             {
                 Dock = DockStyle.Fill,
                 ColumnCount = 1,
-                RowCount = 7,
+                RowCount = 9,
                 Margin = new Padding(0)
             };
 
@@ -912,7 +915,9 @@ namespace ExcelTrainingMonitor
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
+            layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+            layout.RowStyles.Add(new RowStyle(SizeType.Percent, 50F));
             layout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
 
             txtProcessRecordVersion = new TextBox
@@ -1097,6 +1102,33 @@ namespace ExcelTrainingMonitor
             toolbar.Controls.Add(CreateActionButton("Delete Rows", btnProcessRecordDeleteRows_Click, 112));
             toolbar.Controls.Add(CreateActionButton("Delete Columns", btnProcessRecordDeleteColumns_Click, 132));
 
+            var middleProcessRecordPanel = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0, 8, 0, 8)
+            };
+
+            middleProcessRecordPanel.Controls.Add(new Label { Text = "Category:" });
+
+            var cboCategory = new ComboBox
+            {
+                Width = 200
+            };
+            middleProcessRecordPanel.Controls.Add(cboCategory);
+
+            middleProcessRecordPanel.Controls.Add(new Label
+            {
+                Text = "Comments:",
+                Margin = new Padding(20, 3, 5, 0)
+            });
+
+            var txtComments = new TextBox
+            {
+                Width = 300
+            };
+            middleProcessRecordPanel.Controls.Add(txtComments);
+
             var footerLayout = new TableLayoutPanel
             {
                 AutoSize = true,
@@ -1133,6 +1165,16 @@ namespace ExcelTrainingMonitor
             });
             footerLayout.Controls.Add(signOffLayout, 0, 0);
 
+            var dgvProcessRecord2 = new DataGridView
+            {
+                Dock = DockStyle.Fill,
+                AllowUserToAddRows = true,
+                AllowUserToDeleteRows = true,
+                Name = "dgvProcessRecord2"
+            };
+
+            ConfigureGrid(dgvProcessRecord2);
+
             dgvProcessRecord = new DataGridView
             {
                 Dock = DockStyle.Fill,
@@ -1168,7 +1210,9 @@ namespace ExcelTrainingMonitor
             layout.Controls.Add(supplierNameFarmLayout, 0, 3);
             layout.Controls.Add(toolbar, 0, 4);
             layout.Controls.Add(dgvProcessRecord, 0, 5);
-            layout.Controls.Add(footerLayout, 0, 6);
+            layout.Controls.Add(middleProcessRecordPanel, 0, 6);
+            layout.Controls.Add(dgvProcessRecord2, 0, 7);
+            layout.Controls.Add(footerLayout, 0, 8);
             tabProcessRecord.Controls.Add(layout);
             tabControl1.Controls.Add(tabProcessRecord);
         }
