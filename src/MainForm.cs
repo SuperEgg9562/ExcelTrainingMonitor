@@ -1165,15 +1165,34 @@ namespace ExcelTrainingMonitor
             });
             footerLayout.Controls.Add(signOffLayout, 0, 0);
 
-            var dgvProcessRecord2 = new DataGridView
+            dgvDailyProduction = new DataGridView
             {
                 Dock = DockStyle.Fill,
+                AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.None,
+                AutoSizeRowsMode = DataGridViewAutoSizeRowsMode.None,
                 AllowUserToAddRows = true,
                 AllowUserToDeleteRows = true,
-                Name = "dgvProcessRecord2"
+                RowHeadersWidth = 52,
+                ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize,
+                Name = "dgvDailyProduction"
             };
+            dgvDailyProduction.DefaultCellStyle.WrapMode = DataGridViewTriState.True;
+            dgvDailyProduction.RowTemplate.MinimumHeight = 28;
+            dgvDailyProduction.CellEndEdit += DgvDailyProduction_CellEndEdit;
+            dgvDailyProduction.RowPostPaint += DgvDailyProduction_RowPostPaint;
+            ConfigureGrid(dgvDailyProduction);
+            dgvDailyProduction.ReadOnly = false;
+            dgvDailyProduction.RowHeadersVisible = true;
+            dgvDailyProduction.AllowUserToAddRows = true;
+            dgvDailyProduction.AllowUserToDeleteRows = true;
+            dgvDailyProduction.AllowUserToResizeColumns = true;
+            dgvDailyProduction.AllowUserToResizeRows = true;
+            dgvDailyProduction.MultiSelect = true;
+            dgvDailyProduction.SelectionMode = DataGridViewSelectionMode.CellSelect;
 
-            ConfigureGrid(dgvProcessRecord2);
+            dailyProductionTable = GridBookEditorService.LoadSheet("", "", 10, 6);
+            dgvDailyProduction.DataSource = dailyProductionTable;
+            ResizeDailyProductionGrid();
 
             dgvProcessRecord = new DataGridView
             {
@@ -1211,7 +1230,7 @@ namespace ExcelTrainingMonitor
             layout.Controls.Add(toolbar, 0, 4);
             layout.Controls.Add(dgvProcessRecord, 0, 5);
             layout.Controls.Add(middleProcessRecordPanel, 0, 6);
-            layout.Controls.Add(dgvProcessRecord2, 0, 7);
+            layout.Controls.Add(dgvDailyProduction, 0, 7);
             layout.Controls.Add(footerLayout, 0, 8);
             tabProcessRecord.Controls.Add(layout);
             tabControl1.Controls.Add(tabProcessRecord);
@@ -1247,7 +1266,10 @@ namespace ExcelTrainingMonitor
         {
             DocumentEditorService.ResizeGrid(dgvProcessRecord);
         }
-
+        private void ResizeDailyProductionGrid()
+        {
+            DocumentEditorService.ResizeGrid(dgvDailyProduction);
+        }
         private void DgvCompliancePlan_CellEndEdit(object sender, DataGridViewCellEventArgs e)
         {
             ResizeCompliancePlanGrid();
@@ -1257,7 +1279,10 @@ namespace ExcelTrainingMonitor
         {
             ResizeProcessRecordGrid();
         }
-
+        private void DgvDailyProduction_CellEndEdit(object sender, DataGridViewCellEventArgs e)
+        {
+            ResizeProcessRecordGrid();
+        }
         private void DgvCompliancePlan_RowPostPaint(object sender, DataGridViewRowPostPaintEventArgs e)
         {
             DocumentEditorService.DrawRowNumber(dgvCompliancePlan, e, Color.FromArgb(0, 255, 40));
@@ -1267,7 +1292,10 @@ namespace ExcelTrainingMonitor
         {
             DocumentEditorService.DrawRowNumber(dgvProcessRecord, e, Color.FromArgb(0, 255, 40));
         }
-
+        private void DgvDailyProduction_RowPostPaint(object sender, DataGridViewRowPostPaintEventArgs e)
+        {
+            DocumentEditorService.DrawRowNumber(dgvDailyProduction, e, Color.FromArgb(0, 255, 40));
+        }
         private void btnComplianceNew_Click(object sender, EventArgs e)
         {
             compliancePlanPath = "";
