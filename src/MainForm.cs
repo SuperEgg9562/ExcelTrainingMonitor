@@ -1109,25 +1109,35 @@ namespace ExcelTrainingMonitor
                 Margin = new Padding(0, 8, 0, 8)
             };
 
-            middleProcessRecordPanel.Controls.Add(new Label { Text = "Inwards Number:" });
-
-            var cboCategory = new ComboBox
+            middleProcessRecordPanel.Controls.Add(new Label 
             {
-                Width = 200
+                AutoSize = true,
+                Font = new Font("Segoe UI", 10F),
+                Margin = new Padding(0, 7, 8, 0),
+                Text = "Inwards Number:" 
+            });
+
+            var cboInwardsNumber = new GlossyComboBox
+            {
+                Margin = new Padding(0, 0, 8, 0),
+                Width = 240
             };
-            middleProcessRecordPanel.Controls.Add(cboCategory);
+            middleProcessRecordPanel.Controls.Add(cboInwardsNumber);
 
             middleProcessRecordPanel.Controls.Add(new Label
             {
-                Text = "QC Checked by:",
-                Margin = new Padding(20, 3, 5, 0)
+                AutoSize = true,
+                Font = new Font("Segoe UI", 10F),
+                Margin = new Padding(0, 7, 8, 0),
+                Text = "QC Checked by:"
             });
 
-            var txtComments = new TextBox
+            var cboQualityControl = new GlossyComboBox
             {
+                Margin = new Padding(0, 0, 8, 0),
                 Width = 300
             };
-            middleProcessRecordPanel.Controls.Add(txtComments);
+            middleProcessRecordPanel.Controls.Add(cboQualityControl);
 
             var footerLayout = new TableLayoutPanel
             {
