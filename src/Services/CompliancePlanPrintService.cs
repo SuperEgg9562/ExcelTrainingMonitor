@@ -14,10 +14,14 @@ namespace ExcelTrainingMonitor.Services
             string version,
             string title,
             DateTime processDateTime,
+            string supplierFarmName,
+            int birdsProcessed,
             DataTable table,
             Image logo)
         {
-            Print(owner, version, title, processDateTime, "", "", table, logo);
+            string processDetails =
+                $"Supplier / Farm Name: {supplierFarmName}    Birds Killed / Processed: {birdsProcessed:N0}";
+            Print(owner, version, title, processDateTime, processDetails, "", table, logo);
         }
 
         public static void Print(

@@ -44,12 +44,16 @@ namespace ExcelTrainingMonitor
         private DateTimePicker dtpProcessRecordTime;
         private PictureBox picProcessRecordLogo;
         private Label lblProcessRecordLogoPlaceholder;
+        private GlossyComboBox cboProcessSupplier;
+        private NumericUpDown numProcessBirds;
+        private GlossyComboBox cboProcessDropdownLists;
         private GlossyComboBox cboGridBookSheets;
         private GlossyComboBox cboMinimizeBehavior;
         private GlossyCheckBox chkReminderAgentOnClose;
         private DataTable currentGridBookTable = new DataTable();
         private DataTable compliancePlanTable = new DataTable();
         private DataTable processRecordTable = new DataTable();
+        private ProcessRecordMetadata processRecordMetadata = new ProcessRecordMetadata();
         private string currentGridBookSheet = "Sheet1";
         private string compliancePlanPath = "";
         private string processRecordPath = "";
@@ -131,6 +135,7 @@ namespace ExcelTrainingMonitor
             txtNtfyEmail.Text = appSettings.NtfyEmail;
             cboMinimizeBehavior.SelectedItem = appSettings.MinimizeBehavior == "Window" ? "Window" : "Tray";
             chkReminderAgentOnClose.Checked = appSettings.StartReminderAgentOnClose;
+            RefreshProcessSupplierChoices();
         }
 
         private void WireSettingsEvents()
@@ -1037,16 +1042,31 @@ namespace ExcelTrainingMonitor
             {
                 AutoSize = true,
                 Font = new Font("Segoe UI", 10F),
-                Margin = new Padding(0, 0, 36, 0),
-                Text = "Supplier / Farm Name: __________"
+                Margin = new Padding(0, 7, 8, 0),
+                Text = "Supplier / Farm Name:"
             });
+            cboProcessSupplier = new GlossyComboBox
+            {
+                Margin = new Padding(0, 0, 8, 0),
+                Width = 240
+            };
+            supplierNameFarmLayout.Controls.Add(cboProcessSupplier);
+            supplierNameFarmLayout.Controls.Add(CreateActionButton("Add Supplier", btnProcessAddSupplier_Click, 108));
             supplierNameFarmLayout.Controls.Add(new Label
             {
                 AutoSize = true,
                 Font = new Font("Segoe UI", 10F),
-                Margin = new Padding(0),
-                Text = "NO Of Birds Killed / Processed: __________"
+                Margin = new Padding(20, 7, 8, 0),
+                Text = "No. of Birds Killed / Processed:"
             });
+            numProcessBirds = new NumericUpDown
+            {
+                Maximum = 100000000,
+                Minimum = 0,
+                ThousandsSeparator = true,
+                Width = 140
+            };
+            supplierNameFarmLayout.Controls.Add(numProcessBirds);
             var toolbar = new FlowLayoutPanel
             {
                 AutoSize = true,
@@ -1058,8 +1078,19 @@ namespace ExcelTrainingMonitor
             toolbar.Controls.Add(CreateActionButton("Open Plan", btnProcessRecordOpen_Click, 104));
             toolbar.Controls.Add(CreateActionButton("Save Plan", btnProcessRecordSave_Click, 100));
             toolbar.Controls.Add(CreateActionButton("Print Plan", btnProcessRecordPrint_Click, 100));
+            cboProcessDropdownLists = new GlossyComboBox
+            {
+                Margin = new Padding(0, 0, 8, 6),
+                Width = 180
+            };
+            toolbar.Controls.Add(cboProcessDropdownLists);
+            toolbar.Controls.Add(CreateActionButton("Create / Edit List", btnProcessDefineDropdown_Click, 132));
+            toolbar.Controls.Add(CreateActionButton("Apply Dropdown", btnProcessApplyDropdown_Click, 124));
+            toolbar.Controls.Add(CreateActionButton("Remove Dropdown", btnProcessRemoveDropdown_Click, 140));
+            toolbar.Controls.Add(CreateActionButton("Delete List", btnProcessDeleteDropdownList_Click, 104));
             toolbar.Controls.Add(CreateActionButton("Add Row", btnProcessRecordAddRow_Click, 92));
             toolbar.Controls.Add(CreateActionButton("Add Column", btnProcessRecordAddColumn_Click, 116));
+            toolbar.Controls.Add(CreateActionButton("Rename Column", btnProcessRecordRenameColumn_Click, 128));
             toolbar.Controls.Add(CreateActionButton("Move Row Up", btnProcessRecordMoveRowUp_Click, 116));
             toolbar.Controls.Add(CreateActionButton("Move Row Down", btnProcessRecordMoveRowDown_Click, 132));
             toolbar.Controls.Add(CreateActionButton("Clear Cells", btnProcessRecordClearCells_Click, 104));
@@ -1208,16 +1239,172 @@ namespace ExcelTrainingMonitor
             ResizeCompliancePlanGrid();
         }
 
+        private void RefreshProcessSupplierChoices()
+        {
+            if (cboProcessSupplier == null || appSettings == null)
+                return;
+
+            appSettings.SupplierFarmNames ??= new List<string>();
+            string selected = processRecordMetadata.SupplierFarmName;
+            if (string.IsNullOrWhiteSpace(selected))
+                selected = cboProcessSupplier.SelectedItem?.ToString() ?? "";
+
+            List<string> suppliers = appSettings.SupplierFarmNames
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Select(name => name.Trim())
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(name => name)
+                .ToList();
+            if (!string.IsNullOrWhiteSpace(selected) &&
+                !suppliers.Contains(selected, StringComparer.OrdinalIgnoreCase))
+            {
+                suppliers.Add(selected);
+            }
+
+            cboProcessSupplier.Items.Clear();
+            cboProcessSupplier.Items.AddRange(suppliers.Cast<object>().ToArray());
+            cboProcessSupplier.SelectedItem = suppliers.FirstOrDefault(name =>
+                string.Equals(name, selected, StringComparison.OrdinalIgnoreCase));
+            if (cboProcessSupplier.SelectedIndex < 0 && cboProcessSupplier.Items.Count > 0)
+                cboProcessSupplier.SelectedIndex = 0;
+        }
+
+        private void RefreshProcessDropdownLists(string selectedName = null)
+        {
+            if (cboProcessDropdownLists == null)
+                return;
+
+            selectedName ??= cboProcessDropdownLists.SelectedItem?.ToString();
+            string[] names = processRecordMetadata.DropdownLists.Keys
+                .OrderBy(name => name)
+                .ToArray();
+            cboProcessDropdownLists.Items.Clear();
+            cboProcessDropdownLists.Items.AddRange(names.Cast<object>().ToArray());
+            cboProcessDropdownLists.SelectedItem = names.FirstOrDefault(name =>
+                string.Equals(name, selectedName, StringComparison.OrdinalIgnoreCase));
+            if (cboProcessDropdownLists.SelectedIndex < 0 && names.Length > 0)
+                cboProcessDropdownLists.SelectedIndex = 0;
+        }
+
+        private void btnProcessAddSupplier_Click(object sender, EventArgs e)
+        {
+            if (!TextPromptDialog.Show(this, "Add Supplier / Farm", "Supplier or farm name:", "", false, out string name) ||
+                string.IsNullOrWhiteSpace(name))
+            {
+                return;
+            }
+
+            appSettings.SupplierFarmNames ??= new List<string>();
+            if (!appSettings.SupplierFarmNames.Contains(name, StringComparer.OrdinalIgnoreCase))
+            {
+                appSettings.SupplierFarmNames.Add(name);
+                appSettings.SupplierFarmNames = appSettings.SupplierFarmNames
+                    .OrderBy(item => item)
+                    .ToList();
+                SettingsManager.Save(appSettings);
+            }
+
+            processRecordMetadata.SupplierFarmName = name;
+            RefreshProcessSupplierChoices();
+        }
+
+        private void btnProcessDefineDropdown_Click(object sender, EventArgs e)
+        {
+            string currentName = cboProcessDropdownLists.SelectedItem?.ToString() ?? "New List";
+            if (!TextPromptDialog.Show(this, "Dropdown List", "List name:", currentName, false, out string listName) ||
+                string.IsNullOrWhiteSpace(listName))
+            {
+                return;
+            }
+
+            string existingItems = processRecordMetadata.DropdownLists.TryGetValue(listName, out List<string> existing)
+                ? string.Join(Environment.NewLine, existing)
+                : "";
+            if (!TextPromptDialog.Show(
+                    this,
+                    "Populate Dropdown List",
+                    "Enter one item per line:",
+                    existingItems,
+                    true,
+                    out string itemText))
+            {
+                return;
+            }
+
+            List<string> items = itemText
+                .Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            if (items.Count == 0)
+            {
+                MessageBox.Show(this, "Add at least one dropdown item.", "Dropdown List", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            processRecordMetadata.DropdownLists[listName] = items;
+            ProcessRecordGridService.UpdateListCells(dgvProcessRecord, listName, items);
+            RefreshProcessDropdownLists(listName);
+        }
+
+        private void btnProcessApplyDropdown_Click(object sender, EventArgs e)
+        {
+            string listName = cboProcessDropdownLists.SelectedItem?.ToString();
+            if (string.IsNullOrWhiteSpace(listName) ||
+                !processRecordMetadata.DropdownLists.TryGetValue(listName, out List<string> items))
+            {
+                MessageBox.Show(this, "Create or select a dropdown list first.", "Apply Dropdown", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            if (dgvProcessRecord.SelectedCells.Count == 0)
+            {
+                MessageBox.Show(this, "Select one or more grid cells first.", "Apply Dropdown", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            ProcessRecordGridService.AssignSelectedCells(dgvProcessRecord, listName, items);
+        }
+
+        private void btnProcessRemoveDropdown_Click(object sender, EventArgs e)
+        {
+            ProcessRecordGridService.RemoveDropdownsFromSelectedCells(dgvProcessRecord);
+        }
+
+        private void btnProcessDeleteDropdownList_Click(object sender, EventArgs e)
+        {
+            string listName = cboProcessDropdownLists.SelectedItem?.ToString();
+            if (string.IsNullOrWhiteSpace(listName))
+                return;
+
+            if (MessageBox.Show(
+                    this,
+                    $"Delete the dropdown list '{listName}' and remove it from all cells?",
+                    "Delete Dropdown List",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning) != DialogResult.Yes)
+            {
+                return;
+            }
+
+            ProcessRecordGridService.RemoveListCells(dgvProcessRecord, listName);
+            processRecordMetadata.DropdownLists.Remove(listName);
+            RefreshProcessDropdownLists();
+        }
+
         private void btnProcessRecordNew_Click(object sender, EventArgs e)
         {
             processRecordPath = "";
+            processRecordMetadata = new ProcessRecordMetadata();
             txtProcessRecordVersion.Clear();
             txtProcessRecordTitle.Clear();
+            numProcessBirds.Value = 0;
             dtpProcessRecordDateTime.Value = DateTime.Now;
             dtpProcessRecordTime.Value = DateTime.Now;
             DocumentEditorService.ResetLogo(picProcessRecordLogo, lblProcessRecordLogoPlaceholder);
             processRecordTable = GridBookEditorService.LoadSheet("", "", 10, 6);
             dgvProcessRecord.DataSource = processRecordTable;
+            RefreshProcessSupplierChoices();
+            RefreshProcessDropdownLists();
             ResizeProcessRecordGrid();
         }
         private void btnComplianceOpen_Click(object sender, EventArgs e)
@@ -1268,13 +1455,21 @@ namespace ExcelTrainingMonitor
                 string.Equals(name, "Process Record", StringComparison.OrdinalIgnoreCase)) ?? sheets[0];
 
             processRecordPath = dialog.FileName;
+            processRecordMetadata = ProcessRecordGridService.LoadMetadata(processRecordPath);
             txtProcessRecordVersion.Clear();
             txtProcessRecordTitle.Text = Path.GetFileNameWithoutExtension(dialog.FileName);
+            numProcessBirds.Value = Math.Clamp(
+                processRecordMetadata.BirdsProcessed,
+                (int)numProcessBirds.Minimum,
+                (int)numProcessBirds.Maximum);
             dtpProcessRecordDateTime.Value = DateTime.Now;
             dtpProcessRecordTime.Value = DateTime.Now;
             DocumentEditorService.ResetLogo(picProcessRecordLogo, lblProcessRecordLogoPlaceholder);
             processRecordTable = GridBookEditorService.LoadSheet(processRecordPath, sheetName, 10, 6);
             dgvProcessRecord.DataSource = processRecordTable;
+            RefreshProcessSupplierChoices();
+            RefreshProcessDropdownLists();
+            ProcessRecordGridService.ApplyAssignments(dgvProcessRecord, processRecordMetadata);
             ResizeProcessRecordGrid();
         }
         private void btnComplianceSave_Click(object sender, EventArgs e)
@@ -1317,7 +1512,12 @@ namespace ExcelTrainingMonitor
                 processRecordPath = dialog.FileName;
             }
 
+            processRecordMetadata.SupplierFarmName = cboProcessSupplier.SelectedItem?.ToString() ?? "";
+            processRecordMetadata.BirdsProcessed = (int)numProcessBirds.Value;
+            processRecordMetadata.CellDropdownAssignments =
+                ProcessRecordGridService.CaptureAssignments(dgvProcessRecord);
             GridBookEditorService.SaveSheet(processRecordPath, "Process Record", processRecordTable);
+            ProcessRecordGridService.SaveMetadata(processRecordPath, processRecordMetadata);
             NotificationManager.ShowNotification("Process Record Saved", processRecordPath);
         }
         private void btnCompliancePrint_Click(object sender, EventArgs e)
@@ -1341,6 +1541,8 @@ namespace ExcelTrainingMonitor
                 txtProcessRecordVersion.Text,
                 txtProcessRecordTitle.Text,
                 dtpProcessRecordDateTime.Value.Date + dtpProcessRecordTime.Value.TimeOfDay,
+                cboProcessSupplier.SelectedItem?.ToString() ?? "",
+                (int)numProcessBirds.Value,
                 processRecordTable,
                 picProcessRecordLogo.Image);
         }
@@ -1363,6 +1565,33 @@ namespace ExcelTrainingMonitor
         private void btnProcessRecordAddColumn_Click(object sender, EventArgs e)
         {
             DocumentEditorService.AddColumn(processRecordTable, dgvProcessRecord);
+        }
+
+        private void btnProcessRecordRenameColumn_Click(object sender, EventArgs e)
+        {
+            int columnIndex = dgvProcessRecord.CurrentCell?.ColumnIndex ?? -1;
+            if (columnIndex < 0 || columnIndex >= processRecordTable.Columns.Count)
+            {
+                MessageBox.Show(this, "Select a grid column first.", "Rename Column", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            string currentName = processRecordTable.Columns[columnIndex].ColumnName;
+            if (!TextPromptDialog.Show(this, "Rename Column", "Column name:", currentName, false, out string newName) ||
+                string.IsNullOrWhiteSpace(newName) ||
+                string.Equals(currentName, newName, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            if (processRecordTable.Columns.Contains(newName))
+            {
+                MessageBox.Show(this, "That column name is already in use.", "Rename Column", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            processRecordTable.Columns[columnIndex].ColumnName = newName;
+            ResizeProcessRecordGrid();
         }
 
         private void btnComplianceMoveRowUp_Click(object sender, EventArgs e)
@@ -1491,7 +1720,10 @@ namespace ExcelTrainingMonitor
 
         private void ApplyFocusedTabLayout()
         {
-            bool focusedGridMode = tabControl1.SelectedTab?.Name is "tabGridBookEditor" or "tabCompliancePlan";
+            bool focusedGridMode = tabControl1.SelectedTab?.Name is
+                "tabGridBookEditor" or
+                "tabCompliancePlan" or
+                "tabProcessRecord";
 
             topLayout.Visible = !focusedGridMode;
             fileSearchLayout.Visible = !focusedGridMode;

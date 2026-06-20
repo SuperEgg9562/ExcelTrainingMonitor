@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace ExcelTrainingMonitor.Models
 {
@@ -16,5 +17,6 @@ namespace ExcelTrainingMonitor.Models
         public string MinimizeBehavior { get; set; } = "Tray";
         public bool StartReminderAgentOnClose { get; set; } = true;
         public DateTime LastAgentReminderSentFor { get; set; } = DateTime.MinValue;
+        public List<string> SupplierFarmNames { get; set; } = new List<string>();
     }
 }
