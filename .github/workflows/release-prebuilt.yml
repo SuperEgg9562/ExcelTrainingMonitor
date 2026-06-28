@@ -1,0 +1,95 @@
+name: Release pushed prebuilt application
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "prebuilt/windows-x64/**"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prebuilt-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Package pushed files and create release
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout the pushed files
+        uses: actions/checkout@v4
+
+      - name: Verify the pushed executable
+        shell: pwsh
+        run: |
+          if (-not (Test-Path -LiteralPath 'prebuilt/windows-x64/ExcelTrainingMonitor.exe')) {
+            throw 'prebuilt/windows-x64/ExcelTrainingMonitor.exe was not included in this push.'
+          }
+
+      - name: Calculate the next GitHub release version
+        id: version
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $releasedCommit = gh api "repos/$env:GITHUB_REPOSITORY/releases" --paginate --jq ".[] | select(.target_commitish == '$env:GITHUB_SHA') | .tag_name"
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to check releases for this commit.' }
+          if ($releasedCommit) {
+            "skip=true" >> $env:GITHUB_OUTPUT
+            Write-Host "Commit already released as $releasedCommit."
+            exit 0
+          }
+
+          $tags = @(gh release list --repo $env:GITHUB_REPOSITORY --limit 100 --exclude-drafts --json tagName --jq '.[].tagName')
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to read existing GitHub releases.' }
+
+          $versions = foreach ($tag in $tags) {
+            if ($tag -match '^v?(\d+)\.(\d+)\.(\d+)$') {
+              [version]::new([int]$Matches[1], [int]$Matches[2], [int]$Matches[3])
+            }
+          }
+
+          $latest = @($versions | Sort-Object -Descending | Select-Object -First 1)
+          if ($latest.Count -eq 0) {
+            $next = [version]'1.0.0'
+          } else {
+            $current = $latest[0]
+            $next = [version]::new($current.Major, $current.Minor, $current.Build + 1)
+          }
+
+          "skip=false" >> $env:GITHUB_OUTPUT
+          "number=$next" >> $env:GITHUB_OUTPUT
+          "tag=v$next" >> $env:GITHUB_OUTPUT
+          Write-Host "Next GitHub release: v$next"
+
+      - name: Package the pushed prebuilt files
+        if: steps.version.outputs.skip != 'true'
+        shell: pwsh
+        run: |
+          $version = '${{ steps.version.outputs.number }}'
+          $source = 'prebuilt/windows-x64'
+          $output = 'release-assets'
+          New-Item -ItemType Directory -Force -Path $output | Out-Null
+
+          $exeAsset = Join-Path $output "ExcelTrainingMonitor-$version-win-x64.exe"
+          $zipAsset = Join-Path $output "ExcelTrainingMonitor-$version-win-x64.zip"
+          Copy-Item -LiteralPath "$source/ExcelTrainingMonitor.exe" -Destination $exeAsset
+          Compress-Archive -Path "$source/*" -DestinationPath $zipAsset -Force
+
+          Get-FileHash -LiteralPath $exeAsset, $zipAsset -Algorithm SHA256 |
+            ForEach-Object { "$($_.Hash.ToLowerInvariant())  $([IO.Path]::GetFileName($_.Path))" } |
+            Set-Content -LiteralPath (Join-Path $output 'SHA256SUMS.txt')
+
+      - name: Create GitHub Release from the pushed files
+        if: steps.version.outputs.skip != 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $assets = Get-ChildItem 'release-assets' -File | Select-Object -ExpandProperty FullName
+          gh release create '${{ steps.version.outputs.tag }}' @assets --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --title "ExcelTrainingMonitor ${{ steps.version.outputs.number }}" --generate-notes --latest
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub Release creation failed.' }

@@ -9,6 +9,7 @@ namespace ExcelTrainingMonitor.Controls
     {
         private int maximum = 100;
         private int value;
+        private Color accentColor = Color.FromArgb(0, 255, 40);
 
         public NeonProgressBar()
         {
@@ -37,14 +38,23 @@ namespace ExcelTrainingMonitor.Controls
             }
         }
 
+        public Color AccentColor
+        {
+            get => accentColor;
+            set
+            {
+                accentColor = value;
+                Invalidate();
+            }
+        }
+
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
 
-            var accent = Color.FromArgb(0, 255, 40);
-            var fillTop = Color.FromArgb(110, 255, 115);
-            var fillMid = Color.FromArgb(0, 180, 35);
-            var fillBottom = Color.FromArgb(0, 70, 15);
+            Color accent = AccentColor;
+            Color fillTop = ControlPaint.Light(accent, 0.45F);
+            Color fillBottom = ControlPaint.Dark(accent, 0.65F);
             var back = Color.FromArgb(2, 16, 6);
 
             e.Graphics.Clear(back);

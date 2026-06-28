@@ -1,16 +1,23 @@
+# Visual Studio user state
 .vs/
-bin/
-obj/
-build/
-dist/
-publish/
-artifacts/
-theme-analysis/
-tools/
-Extracted.zip
-build/
-publish/
-dist/
 *.user
 *.suo
 *.rsuser
+
+# .NET build and publish output
+**/bin/
+**/obj/
+artifacts/
+publish/
+
+# Test, package, and diagnostic output
+TestResults/
+*.binlog
+*.log
+*.nupkg
+*.snupkg
+
+# Temporary files
+*.tmp
+~$*
+*~

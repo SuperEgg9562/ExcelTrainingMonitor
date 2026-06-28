@@ -1,9 +1,0 @@
-Version 1.0.0
-
-- Initial release
-- Excel monitoring
-- FileSystemWatcher support
-- Colored status grid
-- Training category detection
-- Reminder scheduler
-- System tray support

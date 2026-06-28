@@ -7,15 +7,9 @@ namespace ExcelTrainingMonitor
     partial class MainForm
     {
         private System.ComponentModel.IContainer components = null;
-        private GlossyButton btnBrowse;
-        private GlossyButton btnStart;
-        private GlossyButton btnStop;
         private GlossyButton btnNewExcel;
         private GlossyButton btnSaveExcel;
         private GlossyButton btnExportExcel;
-        private GlossyButton btnExportCsv;
-        private GlossyButton btnPrintPdf;
-        private GlossyButton btnTestNtfy;
         private Label lblFile;
         private Label lblInterval;
         private Label lblReminder;
@@ -28,9 +22,6 @@ namespace ExcelTrainingMonitor
         private NumericUpDown numScanHours;
         private NumericUpDown numScanMinutes;
         private DateTimePicker dtpReminderDate;
-        private GlossyCheckBox chkReminderEnabled;
-        private GlossyCheckBox chkNtfyEnabled;
-        private GlossyComboBox cboTheme;
         private Label lblTheme;
         private Label lblNtfyTopic;
         private Label lblNtfyEmail;
@@ -45,9 +36,6 @@ namespace ExcelTrainingMonitor
         private DataGridView dgvHistory;
         private NotifyIcon notifyIcon1;
         private GlossyCheckBox chkMinimizeTray;
-        private NeonProgressBar pbNotTrained;
-        private NeonProgressBar pbTraining;
-        private NeonProgressBar pbComplete;
         private TableLayoutPanel mainLayout;
         private TableLayoutPanel topLayout;
         private TableLayoutPanel fileSearchLayout;
@@ -58,15 +46,10 @@ namespace ExcelTrainingMonitor
         private TableLayoutPanel reminderLayout;
         private TableLayoutPanel themeLayout;
         private TableLayoutPanel chartsLayout;
-        private PieChartPanel statusPieChart;
-        private PieChartPanel openPieChart;
         private PictureBox picThemeLogo;
         private PictureBox picAccentBar;
         private TableLayoutPanel titleBarLayout;
         private Label lblWindowTitle;
-        private GlossyButton btnWindowMinimize;
-        private GlossyButton btnWindowMaximize;
-        private GlossyButton btnWindowClose;
 
         protected override void Dispose(bool disposing)
         {

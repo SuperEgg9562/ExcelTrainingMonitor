@@ -50,7 +50,15 @@ namespace ExcelTrainingMonitor
         private GlossyComboBox cboProcessDropdownLists;
         private GlossyComboBox cboGridBookSheets;
         private GlossyComboBox cboMinimizeBehavior;
+        private GlossyComboBox cboTheme;
+        private GlossyCheckBox chkReminderEnabled;
+        private GlossyCheckBox chkNtfyEnabled;
         private GlossyCheckBox chkReminderAgentOnClose;
+        private NeonProgressBar pbNotTrained;
+        private NeonProgressBar pbTraining;
+        private NeonProgressBar pbComplete;
+        private PieChartPanel statusPieChart;
+        private PieChartPanel openPieChart;
         private DataTable currentGridBookTable = new DataTable();
         private DataTable compliancePlanTable = new DataTable();
         private DataTable processRecordTable = new DataTable();
@@ -76,6 +84,7 @@ namespace ExcelTrainingMonitor
         public MainForm()
         {
             InitializeComponent();
+            CreateRuntimeMonitorControls();
             CreateGridBookEditorTab();
             CreateCompliancePlanTab();
             CreateProcessRecordTab();
@@ -111,6 +120,60 @@ namespace ExcelTrainingMonitor
             ConfigureGrid(dgvHistory);
             RefreshHistoryGrid();
             UpdateScanTimer();
+        }
+
+        private void CreateRuntimeMonitorControls()
+        {
+            chkReminderEnabled = new GlossyCheckBox
+            {
+                AutoSize = true,
+                Dock = DockStyle.Fill,
+                Text = "Enable reminder"
+            };
+            reminderLayout.Controls.Add(chkReminderEnabled, 0, 2);
+
+            cboTheme = new GlossyComboBox
+            {
+                Dock = DockStyle.Fill,
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            cboTheme.Items.Add("Dark");
+            themeLayout.Controls.Add(cboTheme, 0, 1);
+
+            chkNtfyEnabled = new GlossyCheckBox
+            {
+                AutoSize = true,
+                Dock = DockStyle.Fill,
+                Text = "Enable ntfy"
+            };
+            footerLayout.Controls.Add(chkNtfyEnabled, 0, 0);
+            footerLayout.Controls.Add(lblNtfyTopic, 1, 0);
+            footerLayout.Controls.Add(txtNtfyTopic, 2, 0);
+            footerLayout.Controls.Add(lblNtfyEmail, 3, 0);
+            footerLayout.Controls.Add(txtNtfyEmail, 4, 0);
+
+            pbNotTrained = CreateDashboardProgressBar(Color.FromArgb(220, 24, 30));
+            pbTraining = CreateDashboardProgressBar(Color.FromArgb(255, 196, 22));
+            pbComplete = CreateDashboardProgressBar(Color.FromArgb(0, 220, 35));
+            dashboardLayout.Controls.Add(pbNotTrained);
+            dashboardLayout.Controls.Add(pbTraining);
+            dashboardLayout.Controls.Add(pbComplete);
+
+            statusPieChart = new PieChartPanel { Dock = DockStyle.Fill };
+            openPieChart = new PieChartPanel { Dock = DockStyle.Fill };
+            chartsLayout.Controls.Add(statusPieChart, 0, 0);
+            chartsLayout.Controls.Add(openPieChart, 1, 0);
+        }
+
+        private static NeonProgressBar CreateDashboardProgressBar(Color color)
+        {
+            return new NeonProgressBar
+            {
+                AccentColor = color,
+                Margin = new Padding(18, 2, 0, 0),
+                Maximum = 1,
+                Size = new Size(150, 16)
+            };
         }
 
         private void LoadSettingsIntoControls()
