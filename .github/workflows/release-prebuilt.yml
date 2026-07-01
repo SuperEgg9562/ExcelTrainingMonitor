@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - "prebuilt/windows-x64/**"
+      - ".github/workflows/release-prebuilt.yml"
 
 permissions:
   contents: write
@@ -22,6 +23,8 @@ jobs:
     steps:
       - name: Checkout the pushed files
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Verify the pushed executable
         shell: pwsh
@@ -33,19 +36,17 @@ jobs:
       - name: Calculate the next GitHub release version
         id: version
         shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
-          $releasedCommit = gh api "repos/$env:GITHUB_REPOSITORY/releases" --paginate --jq ".[] | select(.target_commitish == '$env:GITHUB_SHA') | .tag_name"
-          if ($LASTEXITCODE -ne 0) { throw 'Unable to check releases for this commit.' }
-          if ($releasedCommit) {
+          $releasedCommit = @(git tag --points-at HEAD --list 'v*.*.*' | Select-Object -First 1)
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to inspect release tags for this commit.' }
+          if ($releasedCommit.Count -gt 0) {
             "skip=true" >> $env:GITHUB_OUTPUT
-            Write-Host "Commit already released as $releasedCommit."
+            Write-Host "Commit already released as $($releasedCommit[0])."
             exit 0
           }
 
-          $tags = @(gh release list --repo $env:GITHUB_REPOSITORY --limit 100 --exclude-drafts --json tagName --jq '.[].tagName')
-          if ($LASTEXITCODE -ne 0) { throw 'Unable to read existing GitHub releases.' }
+          $tags = @(git tag --list 'v*.*.*')
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to read existing release tags.' }
 
           $versions = foreach ($tag in $tags) {
             if ($tag -match '^v?(\d+)\.(\d+)\.(\d+)$') {
