@@ -10,6 +10,9 @@ namespace ExcelTrainingMonitor
         private GlossyButton btnNewExcel;
         private GlossyButton btnSaveExcel;
         private GlossyButton btnExportExcel;
+        private GlossyButton btnWindowMinimize;
+        private GlossyButton btnWindowMaximize;
+        private GlossyButton btnWindowClose;
         private Label lblFile;
         private Label lblInterval;
         private Label lblReminder;
@@ -100,6 +103,9 @@ namespace ExcelTrainingMonitor
             mainLayout = new TableLayoutPanel();
             titleBarLayout = new TableLayoutPanel();
             lblWindowTitle = new Label();
+            btnWindowMinimize = new GlossyButton();
+            btnWindowMaximize = new GlossyButton();
+            btnWindowClose = new GlossyButton();
             topLayout = new TableLayoutPanel();
             picThemeLogo = new PictureBox();
             intervalLayout = new TableLayoutPanel();
@@ -516,6 +522,9 @@ namespace ExcelTrainingMonitor
             titleBarLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 69F));
             titleBarLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 69F));
             titleBarLayout.Controls.Add(lblWindowTitle, 0, 0);
+            titleBarLayout.Controls.Add(btnWindowMinimize, 1, 0);
+            titleBarLayout.Controls.Add(btnWindowMaximize, 2, 0);
+            titleBarLayout.Controls.Add(btnWindowClose, 3, 0);
             titleBarLayout.Dock = DockStyle.Fill;
             titleBarLayout.Location = new Point(2, 1);
             titleBarLayout.Margin = new Padding(0);
@@ -539,6 +548,39 @@ namespace ExcelTrainingMonitor
             lblWindowTitle.Text = "Excel Training Monitor";
             lblWindowTitle.TextAlign = ContentAlignment.MiddleLeft;
             lblWindowTitle.MouseDown += TitleBar_MouseDown;
+            // 
+            // btnWindowMinimize
+            // 
+            btnWindowMinimize.Dock = DockStyle.Fill;
+            btnWindowMinimize.Margin = new Padding(0);
+            btnWindowMinimize.Name = "btnWindowMinimize";
+            btnWindowMinimize.Size = new Size(69, 32);
+            btnWindowMinimize.TabIndex = 1;
+            btnWindowMinimize.Text = "_";
+            btnWindowMinimize.UseVisualStyleBackColor = false;
+            btnWindowMinimize.Click += btnWindowMinimize_Click;
+            // 
+            // btnWindowMaximize
+            // 
+            btnWindowMaximize.Dock = DockStyle.Fill;
+            btnWindowMaximize.Margin = new Padding(0);
+            btnWindowMaximize.Name = "btnWindowMaximize";
+            btnWindowMaximize.Size = new Size(69, 32);
+            btnWindowMaximize.TabIndex = 2;
+            btnWindowMaximize.Text = "▢";
+            btnWindowMaximize.UseVisualStyleBackColor = false;
+            btnWindowMaximize.Click += btnWindowMaximize_Click;
+            // 
+            // btnWindowClose
+            // 
+            btnWindowClose.Dock = DockStyle.Fill;
+            btnWindowClose.Margin = new Padding(0);
+            btnWindowClose.Name = "btnWindowClose";
+            btnWindowClose.Size = new Size(69, 32);
+            btnWindowClose.TabIndex = 3;
+            btnWindowClose.Text = "✕";
+            btnWindowClose.UseVisualStyleBackColor = false;
+            btnWindowClose.Click += btnWindowClose_Click;
             // 
             // topLayout
             // 

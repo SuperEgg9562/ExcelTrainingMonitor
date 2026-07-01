@@ -174,7 +174,7 @@ namespace ExcelTrainingMonitor.Services
             else if (control is DataGridView grid)
             {
                 grid.BackgroundColor = theme.PanelBack;
-                grid.GridColor = Color.FromArgb(110, theme.Accent);
+                grid.Tag = theme;
                 grid.EnableHeadersVisualStyles = false;
                 grid.ColumnHeadersDefaultCellStyle.BackColor = theme.ControlBack;
                 grid.ColumnHeadersDefaultCellStyle.ForeColor = theme.Fore;
@@ -183,7 +183,10 @@ namespace ExcelTrainingMonitor.Services
                 grid.DefaultCellStyle.SelectionBackColor = theme.Accent;
                 grid.DefaultCellStyle.SelectionForeColor = Color.Black;
                 grid.BorderStyle = BorderStyle.FixedSingle;
-                grid.CellBorderStyle = DataGridViewCellBorderStyle.SingleHorizontal;
+                // disable built-in cell borders and draw semi-transparent lines in Paint
+                grid.CellBorderStyle = DataGridViewCellBorderStyle.None;
+                grid.Paint -= DrawTransparentGridLines;
+                grid.Paint += DrawTransparentGridLines;
                 ApplyTrainingColors(grid);
                 grid.CellEndEdit += (_, __) => ApplyTrainingColors(grid);
             }
@@ -299,6 +302,27 @@ namespace ExcelTrainingMonitor.Services
                 e.Graphics.DrawRectangle(borderPen, 0, 0, control.Width - 1, control.Height - 1);
             }
         }
+
+        private static void DrawTransparentGridLines(object sender, PaintEventArgs e)
+        {
+            if (sender is not DataGridView dgv)
+                return;
+
+            var theme = dgv.Tag as AppTheme ?? new AppTheme();
+            using var pen = new Pen(Color.FromArgb(110, theme.Accent), 1);
+
+            // draw horizontal separators for visible rows
+            for (int i = 0; i < dgv.Rows.Count; i++)
+            {
+                var rect = dgv.GetRowDisplayRectangle(i, true);
+                if (rect.Height <= 0)
+                    continue;
+
+                int y = rect.Bottom - 1;
+                e.Graphics.DrawLine(pen, rect.Left, y, rect.Right, y);
+            }
+        }
+
         public static void ApplyTrainingColors(DataGridView dgvGridBook)
         {
             foreach (DataGridViewRow row in dgvGridBook.Rows)
