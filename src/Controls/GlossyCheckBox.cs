@@ -8,6 +8,9 @@ namespace ExcelTrainingMonitor.Controls
     internal sealed class GlossyCheckBox : CheckBox
     {
         private readonly PointerInteractionState pointerState = new PointerInteractionState();
+        public Color AccentColor { get; set; } = Color.FromArgb(0, 255, 40);
+        public Color BoxBackColor { get; set; } = Color.FromArgb(12, 62, 12);
+        public Color HoverBackColor { get; set; } = Color.FromArgb(28, 96, 14);
 
         public GlossyCheckBox()
         {
@@ -38,19 +41,19 @@ namespace ExcelTrainingMonitor.Controls
             var gloss = new Rectangle(inner.X, inner.Y, inner.Width, Math.Max(5, inner.Height / 2));
 
             Color top = pointerState.Pressing
-                ? Color.FromArgb(18, 50, 8)
-                : pointerState.Hovering ? Color.FromArgb(28, 96, 14) : Color.FromArgb(12, 62, 12);
+                ? ControlPaint.Dark(BoxBackColor, 0.3F)
+                : pointerState.Hovering ? HoverBackColor : ControlPaint.Light(BoxBackColor, 0.1F);
             Color bottom = Checked
-                ? Color.FromArgb(0, 150, 30)
-                : Color.FromArgb(0, 28, 8);
+                ? ControlPaint.Dark(AccentColor, 0.25F)
+                : ControlPaint.Dark(BoxBackColor, 0.25F);
 
             using var bodyBrush = new LinearGradientBrush(inner, top, bottom, LinearGradientMode.Vertical);
             using var glossBrush = new LinearGradientBrush(
                 gloss,
-                Color.FromArgb(145, 255, 236, 125),
-                Color.FromArgb(20, 255, 190, 20),
+                Color.FromArgb(65, AccentColor),
+                Color.FromArgb(8, AccentColor),
                 LinearGradientMode.Vertical);
-            using var borderPen = new Pen(pointerState.Hovering ? Color.FromArgb(255, 215, 35) : Color.FromArgb(0, 255, 40));
+            using var borderPen = new Pen(AccentColor);
             using var shadowPen = new Pen(Color.Black);
 
             g.FillRectangle(bodyBrush, inner);
@@ -60,7 +63,7 @@ namespace ExcelTrainingMonitor.Controls
 
             if (Checked)
             {
-                using var checkPen = new Pen(Color.FromArgb(255, 220, 20), 2.2F)
+                using var checkPen = new Pen(AccentColor, 2.2F)
                 {
                     StartCap = LineCap.Round,
                     EndCap = LineCap.Round

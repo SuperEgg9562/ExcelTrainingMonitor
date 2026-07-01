@@ -137,7 +137,7 @@ namespace ExcelTrainingMonitor
                 Dock = DockStyle.Fill,
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
-            cboTheme.Items.Add("Dark");
+            cboTheme.Items.AddRange(new object[] { "Dark", "Graphite" });
             themeLayout.Controls.Add(cboTheme, 0, 1);
 
             chkNtfyEnabled = new GlossyCheckBox

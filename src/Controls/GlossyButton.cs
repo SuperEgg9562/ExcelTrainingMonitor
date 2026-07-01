@@ -8,6 +8,8 @@ namespace ExcelTrainingMonitor.Controls
     internal sealed class GlossyButton : Button
     {
         private readonly PointerInteractionState pointerState = new PointerInteractionState();
+        public Color AccentColor { get; set; } = Color.FromArgb(0, 255, 40);
+        public Color HoverBackColor { get; set; } = Color.FromArgb(7, 92, 24);
 
         public GlossyButton()
         {
@@ -30,20 +32,20 @@ namespace ExcelTrainingMonitor.Controls
             Rectangle gloss = new Rectangle(2, 2, Width - 5, Math.Max(8, Height / 2));
 
             Color top = pointerState.Pressing
-                ? Color.FromArgb(1, 40, 10)
-                : pointerState.Hovering ? Color.FromArgb(7, 92, 24) : Color.FromArgb(4, 62, 16);
+                ? ControlPaint.Dark(BackColor, 0.35F)
+                : pointerState.Hovering ? ControlPaint.Light(HoverBackColor, 0.12F) : ControlPaint.Light(BackColor, 0.12F);
             Color bottom = pointerState.Pressing
-                ? Color.FromArgb(0, 95, 20)
-                : pointerState.Hovering ? Color.FromArgb(0, 145, 30) : Color.FromArgb(0, 112, 24);
+                ? ControlPaint.Dark(BackColor, 0.12F)
+                : pointerState.Hovering ? HoverBackColor : ControlPaint.Dark(BackColor, 0.18F);
 
             using var bodyBrush = new LinearGradientBrush(inner, top, bottom, LinearGradientMode.Vertical);
             using var glossBrush = new LinearGradientBrush(
                 gloss,
-                Color.FromArgb(150, 190, 255, 195),
-                Color.FromArgb(20, 0, 255, 40),
+                Color.FromArgb(75, AccentColor),
+                Color.FromArgb(8, AccentColor),
                 LinearGradientMode.Vertical);
-            using var borderPen = new Pen(Color.FromArgb(0, 255, 40));
-            using var darkPen = new Pen(Color.FromArgb(0, 40, 8));
+            using var borderPen = new Pen(AccentColor);
+            using var darkPen = new Pen(ControlPaint.Dark(BackColor, 0.6F));
 
             g.FillRectangle(bodyBrush, inner);
             g.FillRectangle(glossBrush, gloss);

@@ -24,7 +24,29 @@ namespace ExcelTrainingMonitor.Services
     {
         public static AppTheme LoadTheme(string themeName)
         {
-            string assetPath = Path.Combine(AppContext.BaseDirectory, "Themes", themeName ?? "Dark");
+            string selectedTheme = string.Equals(themeName, "Graphite", StringComparison.OrdinalIgnoreCase)
+                ? "Graphite"
+                : "Dark";
+            string assetPath = Path.Combine(AppContext.BaseDirectory, "Themes", selectedTheme);
+            if (!Directory.Exists(assetPath))
+                assetPath = Path.Combine(AppContext.BaseDirectory, "Themes", "Dark");
+
+            if (selectedTheme == "Graphite")
+            {
+                return new AppTheme
+                {
+                    WindowBack = Color.FromArgb(5, 5, 6),
+                    PanelBack = Color.FromArgb(16, 17, 19),
+                    ControlBack = Color.FromArgb(35, 37, 40),
+                    ControlHover = Color.FromArgb(52, 56, 59),
+                    Fore = Color.FromArgb(222, 225, 226),
+                    MutedFore = Color.FromArgb(148, 154, 157),
+                    Accent = Color.FromArgb(36, 205, 82),
+                    BackgroundImage = LoadImage(Path.Combine(assetPath, "background.png")),
+                    LogoImage = LoadImage(Path.Combine(assetPath, "logo.png")),
+                    AccentBarImage = LoadImage(Path.Combine(assetPath, "divider.png"))
+                };
+            }
 
             return new AppTheme
             {
@@ -63,6 +85,7 @@ namespace ExcelTrainingMonitor.Services
             {
                 control.BackColor = theme.PanelBack;
                 control.ForeColor = theme.Fore;
+                control.Tag = theme;
                 control.Paint -= DrawGlossyContainer;
                 control.Paint += DrawGlossyContainer;
 
@@ -75,6 +98,8 @@ namespace ExcelTrainingMonitor.Services
             {
                 glossyButton.BackColor = theme.ControlBack;
                 glossyButton.ForeColor = theme.Fore;
+                glossyButton.AccentColor = theme.Accent;
+                glossyButton.HoverBackColor = theme.ControlHover;
                 glossyButton.Font = new Font(glossyButton.Font, FontStyle.Regular);
             }
             else if (control is Button button)
@@ -82,7 +107,7 @@ namespace ExcelTrainingMonitor.Services
                 button.FlatStyle = FlatStyle.Flat;
                 button.FlatAppearance.BorderColor = theme.Accent;
                 button.FlatAppearance.BorderSize = 1;
-                button.FlatAppearance.MouseDownBackColor = Color.FromArgb(22, 100, 28);
+                button.FlatAppearance.MouseDownBackColor = ControlPaint.Dark(theme.ControlHover, 0.25F);
                 button.FlatAppearance.MouseOverBackColor = theme.ControlHover;
                 button.BackColor = theme.ControlBack;
                 button.ForeColor = theme.Fore;
@@ -94,6 +119,9 @@ namespace ExcelTrainingMonitor.Services
             {
                 glossyComboBox.BackColor = theme.ControlBack;
                 glossyComboBox.ForeColor = theme.Fore;
+                glossyComboBox.AccentColor = theme.Accent;
+                glossyComboBox.HoverBackColor = theme.ControlHover;
+                glossyComboBox.Tag = theme;
                 glossyComboBox.FlatStyle = FlatStyle.Flat;
                 glossyComboBox.DrawMode = DrawMode.OwnerDrawFixed;
                 glossyComboBox.Invalidate();
@@ -111,6 +139,7 @@ namespace ExcelTrainingMonitor.Services
                 {
                     comboBox.FlatStyle = FlatStyle.Flat;
                     comboBox.DrawMode = DrawMode.OwnerDrawFixed;
+                    comboBox.Tag = theme;
                     comboBox.DrawItem -= DrawThemedComboItem;
                     comboBox.DrawItem += DrawThemedComboItem;
                 }
@@ -127,6 +156,9 @@ namespace ExcelTrainingMonitor.Services
             {
                 glossyCheckBox.BackColor = Color.Transparent;
                 glossyCheckBox.ForeColor = theme.Fore;
+                glossyCheckBox.AccentColor = theme.Accent;
+                glossyCheckBox.BoxBackColor = theme.ControlBack;
+                glossyCheckBox.HoverBackColor = theme.ControlHover;
                 glossyCheckBox.Invalidate();
             }
             else if (control is CheckBox || control is Label)
@@ -142,7 +174,7 @@ namespace ExcelTrainingMonitor.Services
             else if (control is DataGridView grid)
             {
                 grid.BackgroundColor = theme.PanelBack;
-                grid.GridColor = Color.FromArgb(0, 75, 18);
+                grid.GridColor = Color.FromArgb(110, theme.Accent);
                 grid.EnableHeadersVisualStyles = false;
                 grid.ColumnHeadersDefaultCellStyle.BackColor = theme.ControlBack;
                 grid.ColumnHeadersDefaultCellStyle.ForeColor = theme.Fore;
@@ -178,16 +210,17 @@ namespace ExcelTrainingMonitor.Services
 
             bool selected = (e.State & DrawItemState.Selected) == DrawItemState.Selected;
             Rectangle bounds = e.Bounds;
+            var theme = comboBox.Tag as AppTheme ?? new AppTheme();
 
             using var backBrush = new LinearGradientBrush(
                 bounds,
-                selected ? Color.FromArgb(18, 96, 18) : Color.FromArgb(5, 48, 12),
-                selected ? Color.FromArgb(0, 140, 28) : Color.FromArgb(0, 18, 6),
+                selected ? theme.ControlHover : theme.ControlBack,
+                selected ? ControlPaint.Dark(theme.ControlHover, 0.3F) : ControlPaint.Dark(theme.ControlBack, 0.25F),
                 LinearGradientMode.Vertical);
             using var shineBrush = new LinearGradientBrush(
                 new Rectangle(bounds.X, bounds.Y, bounds.Width, Math.Max(4, bounds.Height / 2)),
-                Color.FromArgb(selected ? 120 : 80, 255, 236, 125),
-                Color.FromArgb(0, 0, 255, 40),
+                Color.FromArgb(selected ? 80 : 35, theme.Accent),
+                Color.FromArgb(0, theme.Accent),
                 LinearGradientMode.Vertical);
 
             e.Graphics.FillRectangle(backBrush, bounds);
@@ -198,7 +231,7 @@ namespace ExcelTrainingMonitor.Services
                 comboBox.GetItemText(comboBox.Items[e.Index]),
                 comboBox.Font,
                 new Rectangle(bounds.X + 8, bounds.Y, bounds.Width - 12, bounds.Height),
-                selected ? Color.FromArgb(255, 220, 20) : comboBox.ForeColor,
+                selected ? theme.Fore : comboBox.ForeColor,
                 TextFormatFlags.Left | TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis);
         }
 
@@ -212,15 +245,15 @@ namespace ExcelTrainingMonitor.Services
 
             using var backBrush = new LinearGradientBrush(
                 bounds,
-                selected ? Color.FromArgb(8, 92, 24) : Color.FromArgb(12, 18, 14),
-                selected ? Color.FromArgb(0, 38, 10) : theme.PanelBack,
+                selected ? theme.ControlHover : theme.ControlBack,
+                selected ? ControlPaint.Dark(theme.ControlHover, 0.35F) : theme.PanelBack,
                 LinearGradientMode.Vertical);
             using var shineBrush = new LinearGradientBrush(
                 new Rectangle(bounds.X + 1, bounds.Y + 1, Math.Max(1, bounds.Width - 2), Math.Max(1, bounds.Height / 2)),
-                selected ? Color.FromArgb(120, 180, 255, 185) : Color.FromArgb(45, 100, 150, 105),
-                Color.FromArgb(0, 0, 255, 40),
+                Color.FromArgb(selected ? 75 : 25, theme.Accent),
+                Color.FromArgb(0, theme.Accent),
                 LinearGradientMode.Vertical);
-            using var borderPen = new Pen(selected ? theme.Accent : Color.FromArgb(0, 80, 18));
+            using var borderPen = new Pen(selected ? theme.Accent : Color.FromArgb(90, theme.Accent));
             using var textBrush = new SolidBrush(theme.Fore);
 
             e.Graphics.FillRectangle(backBrush, bounds);
@@ -241,21 +274,22 @@ namespace ExcelTrainingMonitor.Services
             var control = (Control)sender;
             if (control.Width <= 0 || control.Height <= 0)
                 return;
+            var theme = control.Tag as AppTheme ?? new AppTheme();
 
             Rectangle bounds = new Rectangle(0, 0, control.Width, control.Height);
             Rectangle shine = new Rectangle(0, 0, control.Width, Math.Max(12, control.Height / 3));
 
             using var backBrush = new LinearGradientBrush(
                 bounds,
-                Color.FromArgb(4, 24, 8),
-                Color.FromArgb(0, 6, 2),
+                theme.PanelBack,
+                ControlPaint.Dark(theme.PanelBack, 0.35F),
                 LinearGradientMode.Vertical);
             using var shineBrush = new LinearGradientBrush(
                 shine,
-                Color.FromArgb(60, 0, 255, 48),
-                Color.FromArgb(0, 0, 80, 12),
+                Color.FromArgb(38, theme.Accent),
+                Color.FromArgb(0, theme.Accent),
                 LinearGradientMode.Vertical);
-            using var borderPen = new Pen(Color.FromArgb(0, 90, 18));
+            using var borderPen = new Pen(Color.FromArgb(100, theme.Accent));
 
             e.Graphics.FillRectangle(backBrush, bounds);
             e.Graphics.FillRectangle(shineBrush, shine);
