@@ -26,11 +26,13 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify the pushed executable
+      - name: Verify the pushed prebuilt files
         shell: pwsh
         run: |
-          if (-not (Test-Path -LiteralPath 'prebuilt/windows-x64/ExcelTrainingMonitor.exe')) {
-            throw 'prebuilt/windows-x64/ExcelTrainingMonitor.exe was not included in this push.'
+          $exe = Test-Path -LiteralPath 'prebuilt/windows-x64/ExcelTrainingMonitor.exe'
+          $zip = Test-Path -LiteralPath 'prebuilt/windows-x64/ExcelTrainingMonitor.zip'
+          if (-not ($exe -or $zip)) {
+            throw 'Neither prebuilt/windows-x64/ExcelTrainingMonitor.exe nor prebuilt/windows-x64/ExcelTrainingMonitor.zip was included in this push.'
           }
 
       - name: Calculate the next GitHub release version
@@ -76,14 +78,31 @@ jobs:
           $output = 'release-assets'
           New-Item -ItemType Directory -Force -Path $output | Out-Null
 
-          $exeAsset = Join-Path $output "ExcelTrainingMonitor-$version-win-x64.exe"
-          $zipAsset = Join-Path $output "ExcelTrainingMonitor-$version-win-x64.zip"
-          Copy-Item -LiteralPath "$source/ExcelTrainingMonitor.exe" -Destination $exeAsset
-          Compress-Archive -Path "$source/*" -DestinationPath $zipAsset -Force
+          $exePath = Join-Path $source 'ExcelTrainingMonitor.exe'
+          $zipPath = Join-Path $source 'ExcelTrainingMonitor.zip'
 
-          Get-FileHash -LiteralPath $exeAsset, $zipAsset -Algorithm SHA256 |
-            ForEach-Object { "$($_.Hash.ToLowerInvariant())  $([IO.Path]::GetFileName($_.Path))" } |
-            Set-Content -LiteralPath (Join-Path $output 'SHA256SUMS.txt')
+          # prefer an already-provided zip, otherwise package the exe
+          if (Test-Path $zipPath) {
+            $zipAsset = Join-Path $output "ExcelTrainingMonitor-$version-win-x64.zip"
+            Copy-Item -LiteralPath $zipPath -Destination $zipAsset -Force
+            $exeAsset = $null
+          } else {
+            if (-not (Test-Path $exePath)) { throw 'Expected executable missing during packaging step.' }
+            $exeAsset = Join-Path $output "ExcelTrainingMonitor-$version-win-x64.exe"
+            Copy-Item -LiteralPath $exePath -Destination $exeAsset -Force
+            $zipAsset = Join-Path $output "ExcelTrainingMonitor-$version-win-x64.zip"
+            Compress-Archive -Path "$source/*" -DestinationPath $zipAsset -Force
+          }
+
+          $hashFiles = @()
+          if ($exeAsset) { $hashFiles += $exeAsset }
+          if ($zipAsset) { $hashFiles += $zipAsset }
+
+          if ($hashFiles.Count -gt 0) {
+            Get-FileHash -LiteralPath $hashFiles -Algorithm SHA256 |
+              ForEach-Object { "$($_.Hash.ToLowerInvariant())  $([IO.Path]::GetFileName($_.Path))" } |
+              Set-Content -LiteralPath (Join-Path $output 'SHA256SUMS.txt')
+          }
 
       - name: Create GitHub Release from the pushed files
         if: steps.version.outputs.skip != 'true'

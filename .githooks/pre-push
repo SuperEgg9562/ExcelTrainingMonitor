@@ -1,0 +1,20 @@
+#!/usr/bin/env pwsh
+# Pre-push git hook: compress prebuilt exe before push
+# This hook expects PowerShell Core (pwsh) to be available on PATH.
+
+$script = Join-Path $PSScriptRoot "..\tools\compress-prebuilt.ps1"
+if (-not (Test-Path $script)) {
+	Write-Host "Prebuilt compression script not found: $script" -ForegroundColor Yellow
+	exit 0
+}
+
+Write-Host "Running prebuilt compression script..."
+& pwsh -NoProfile -ExecutionPolicy Bypass -File $script
+$exit = $LASTEXITCODE
+if ($exit -eq 0) {
+	Write-Host "Prebuilt compression success or not needed. Proceeding with push."
+	exit 0
+}
+
+Write-Error "Prebuilt compression failed or produced oversized zip. Aborting push."
+exit $exit
