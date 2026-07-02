@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
@@ -9,8 +9,8 @@
     <PublishSingleFile>true</PublishSingleFile>
     <PublishSelfContained>true</PublishSelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <AssemblyVersion>1.0.10.6</AssemblyVersion>
-    <FileVersion>1.0.10.6</FileVersion>
+    <AssemblyVersion>1.0.13.9</AssemblyVersion>
+    <FileVersion>1.0.13.9</FileVersion>
     <Version>1.0.4</Version>
     <InformationalVersion>1.0.4</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
@@ -30,5 +30,29 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+
+  <!-- Copy produced executable to prebuilt/windows-x64 on each build -->
+  <PropertyGroup>
+    <!-- prebuilt path relative to project directory -->
+    <PrebuiltOutputDir>$(MSBuildProjectDirectory)\..\prebuilt\windows-x64\</PrebuiltOutputDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- all theme files to copy into prebuilt output preserving subfolders -->
+    <ThemeFiles Include="Themes\**\*.*" />
+  </ItemGroup>
+
+  <Target Name="CopyToPrebuilt" AfterTargets="Build">
+    <!-- ensure base prebuilt folder exists -->
+    <MakeDir Directories="$(PrebuiltOutputDir)" />
+    <!-- ensure theme subdirectories exist before copying -->
+    <MakeDir Directories="@(ThemeFiles->'$(PrebuiltOutputDir)%(RecursiveDir)')" Condition="@(ThemeFiles-&gt;Count()) &gt; 0" />
+
+    <!-- copy main built executable -->
+    <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(PrebuiltOutputDir)$(TargetFileName)" SkipUnchangedFiles="true" />
+
+    <!-- copy theme files preserving folder structure -->
+    <Copy SourceFiles="@(ThemeFiles)" DestinationFiles="@(ThemeFiles->'$(PrebuiltOutputDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
 
 </Project>
