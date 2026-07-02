@@ -10,6 +10,8 @@ namespace ExcelTrainingMonitor
         private GlossyButton btnNewExcel;
         private GlossyButton btnSaveExcel;
         private GlossyButton btnExportExcel;
+        private GlossyButton btnStart;
+        private GlossyButton btnStop;
         private GlossyButton btnWindowMinimize;
         private GlossyButton btnWindowMaximize;
         private GlossyButton btnWindowClose;
@@ -42,6 +44,7 @@ namespace ExcelTrainingMonitor
         private TableLayoutPanel mainLayout;
         private TableLayoutPanel topLayout;
         private TableLayoutPanel fileSearchLayout;
+        private GlossyButton btnBrowse;
         private FlowLayoutPanel actionLayout;
         private FlowLayoutPanel dashboardLayout;
         private TableLayoutPanel footerLayout;
@@ -112,6 +115,9 @@ namespace ExcelTrainingMonitor
             reminderLayout = new TableLayoutPanel();
             themeLayout = new TableLayoutPanel();
             fileSearchLayout = new TableLayoutPanel();
+            btnBrowse = new GlossyButton();
+            btnStart = new GlossyButton();
+            btnStop = new GlossyButton();
             actionLayout = new FlowLayoutPanel();
             btnNewExcel = new GlossyButton();
             btnSaveExcel = new GlossyButton();
@@ -671,11 +677,13 @@ namespace ExcelTrainingMonitor
             // 
             // fileSearchLayout
             // 
-            fileSearchLayout.ColumnCount = 2;
+            fileSearchLayout.ColumnCount = 3;
             fileSearchLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+            fileSearchLayout.ColumnStyles.Add(new ColumnStyle());
             fileSearchLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 440F));
             fileSearchLayout.Controls.Add(lblFile, 0, 0);
-            fileSearchLayout.Controls.Add(txtSearch, 1, 0);
+            fileSearchLayout.Controls.Add(btnBrowse, 1, 0);
+            fileSearchLayout.Controls.Add(txtSearch, 2, 0);
             fileSearchLayout.Dock = DockStyle.Fill;
             fileSearchLayout.Location = new Point(21, 189);
             fileSearchLayout.Margin = new Padding(19, 10, 19, 0);
@@ -688,6 +696,8 @@ namespace ExcelTrainingMonitor
             // actionLayout
             // 
             actionLayout.AutoSize = true;
+            actionLayout.Controls.Add(btnStart);
+            actionLayout.Controls.Add(btnStop);
             actionLayout.Controls.Add(btnNewExcel);
             actionLayout.Controls.Add(btnSaveExcel);
             actionLayout.Controls.Add(btnExportExcel);
@@ -751,6 +761,22 @@ namespace ExcelTrainingMonitor
             btnExportExcel.UseVisualStyleBackColor = false;
             btnExportExcel.Click += btnExportExcel_Click;
             // 
+            // btnBrowse
+            // 
+            btnBrowse.AutoSize = true;
+            btnBrowse.BackColor = Color.FromArgb(3, 45, 13);
+            btnBrowse.FlatStyle = FlatStyle.Flat;
+            btnBrowse.ForeColor = Color.FromArgb(0, 255, 40);
+            btnBrowse.Location = new Point(0, 0);
+            btnBrowse.Margin = new Padding(10, 7, 8, 0);
+            btnBrowse.MinimumSize = new Size(96, 34);
+            btnBrowse.Name = "btnBrowse";
+            btnBrowse.Size = new Size(96, 34);
+            btnBrowse.TabIndex = 9;
+            btnBrowse.Text = "Browse";
+            btnBrowse.UseVisualStyleBackColor = false;
+            btnBrowse.Click += btnBrowse_Click;
+            // 
             // chkMinimizeTray
             // 
             chkMinimizeTray.AutoSize = true;
@@ -764,6 +790,38 @@ namespace ExcelTrainingMonitor
             chkMinimizeTray.TabIndex = 3;
             chkMinimizeTray.Text = "Minimize to tray";
             chkMinimizeTray.UseVisualStyleBackColor = false;
+            // 
+            // btnStart
+            // 
+            btnStart.AutoSize = true;
+            btnStart.BackColor = Color.FromArgb(3, 45, 13);
+            btnStart.FlatStyle = FlatStyle.Flat;
+            btnStart.ForeColor = Color.FromArgb(0, 255, 40);
+            btnStart.Location = new Point(0, 0);
+            btnStart.Margin = new Padding(0, 0, 8, 6);
+            btnStart.MinimumSize = new Size(96, 34);
+            btnStart.Name = "btnStart";
+            btnStart.Size = new Size(96, 34);
+            btnStart.TabIndex = 10;
+            btnStart.Text = "Start";
+            btnStart.UseVisualStyleBackColor = false;
+            btnStart.Click += btnStart_Click;
+            // 
+            // btnStop
+            // 
+            btnStop.AutoSize = true;
+            btnStop.BackColor = Color.FromArgb(3, 45, 13);
+            btnStop.FlatStyle = FlatStyle.Flat;
+            btnStop.ForeColor = Color.FromArgb(0, 255, 40);
+            btnStop.Location = new Point(0, 0);
+            btnStop.Margin = new Padding(0, 0, 8, 6);
+            btnStop.MinimumSize = new Size(96, 34);
+            btnStop.Name = "btnStop";
+            btnStop.Size = new Size(96, 34);
+            btnStop.TabIndex = 11;
+            btnStop.Text = "Stop";
+            btnStop.UseVisualStyleBackColor = false;
+            btnStop.Click += btnStop_Click;
             // 
             // picAccentBar
             // 
