@@ -9,8 +9,8 @@
     <PublishSingleFile>true</PublishSingleFile>
     <PublishSelfContained>true</PublishSelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-    <AssemblyVersion>1.0.13.9</AssemblyVersion>
-    <FileVersion>1.0.13.9</FileVersion>
+    <AssemblyVersion>1.0.17.13</AssemblyVersion>
+    <FileVersion>1.0.17.13</FileVersion>
     <Version>1.0.4</Version>
     <InformationalVersion>1.0.4</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
@@ -42,14 +42,58 @@
     <ThemeFiles Include="Themes\**\*.*" />
   </ItemGroup>
 
-  <Target Name="CopyToPrebuilt" AfterTargets="Build">
+  <!-- Copy built output and theme files into prebuilt on Release build -->
+  <Target Name="CopyBuiltOutputAndThemesToPrebuilt" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <Message Importance="high" Text="Copying build output from $(TargetDir) to $(PrebuiltOutputDir)..." />
+    <Message Importance="high" Text="Project: $(MSBuildProjectFullPath)" />
+    <Message Importance="high" Text="TargetDir: $(TargetDir)" />
+    <Message Importance="high" Text="OutputPath: $(OutputPath)" />
+    <Message Importance="high" Text="TargetPath: $(TargetPath)" />
+    <MakeDir Directories="$(PrebuiltOutputDir)" />
+    <ItemGroup>
+      <!-- Use TargetDir which is the directory containing the built output for the project -->
+      <BuildOutputFiles Include="$(TargetDir)**\*.*" />
+    </ItemGroup>
+
+    <!-- list files we will copy (diagnostic) -->
+    <Message Importance="high" Text="Files to copy: @(BuildOutputFiles-&gt;Count())" />
+    <Message Importance="normal" Text="@(BuildOutputFiles->'%(FullPath)')" />
+
+    <Copy SourceFiles="@(BuildOutputFiles)" DestinationFiles="@(BuildOutputFiles->'$(PrebuiltOutputDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+
+    <!-- copy theme files preserving folder structure -->
+    <MakeDir Directories="@(ThemeFiles->'$(PrebuiltOutputDir)%(RecursiveDir)')" Condition="@(ThemeFiles-&gt;Count()) &gt; 0" />
+    <Message Importance="high" Text="Copying @(ThemeFiles-&gt;Count()) theme files..." />
+    <Copy SourceFiles="@(ThemeFiles)" DestinationFiles="@(ThemeFiles->'$(PrebuiltOutputDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+
+  <!-- If publish did not run or failed, copy the built output from the project's OutputPath into prebuilt as a fallback -->
+  <Target Name="CopyBuiltOutputToPrebuilt" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <Message Importance="high" Text="Copying built output (fallback) to $(PrebuiltOutputDir) ..." />
+    <MakeDir Directories="$(PrebuiltOutputDir)" />
+    <ItemGroup>
+      <BuiltFiles Include="$(OutputPath)**\*.*" />
+    </ItemGroup>
+    <!-- Only copy when publish output doesn't already exist -->
+    <Copy SourceFiles="@(BuiltFiles)" DestinationFiles="@(BuiltFiles->'$(PrebuiltOutputDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
+  </Target>
+
+  <Target Name="CopyPublishOutputToPrebuilt" AfterTargets="Publish">
     <!-- ensure base prebuilt folder exists -->
     <MakeDir Directories="$(PrebuiltOutputDir)" />
-    <!-- ensure theme subdirectories exist before copying -->
+
+    <!-- create Theme subdirs -->
     <MakeDir Directories="@(ThemeFiles->'$(PrebuiltOutputDir)%(RecursiveDir)')" Condition="@(ThemeFiles-&gt;Count()) &gt; 0" />
 
-    <!-- copy main built executable -->
-    <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(PrebuiltOutputDir)$(TargetFileName)" SkipUnchangedFiles="true" />
+    <!-- copy publish output if present -->
+    <ItemGroup>
+      <PublishedFiles Include="$(PublishDir)**\*.*" Condition="Exists('$(PublishDir)')" />
+    </ItemGroup>
+
+    <Copy SourceFiles="@(PublishedFiles)" DestinationFiles="@(PublishedFiles->'$(PrebuiltOutputDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" Condition="Exists('$(PublishDir)')" />
+
+    <!-- fallback: copy built target if no publish output was produced -->
+    <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(PrebuiltOutputDir)$(TargetFileName)" SkipUnchangedFiles="true" Condition="!Exists('$(PublishDir)')" />
 
     <!-- copy theme files preserving folder structure -->
     <Copy SourceFiles="@(ThemeFiles)" DestinationFiles="@(ThemeFiles->'$(PrebuiltOutputDir)%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" />
